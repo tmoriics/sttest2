@@ -1,0 +1,12 @@
+numpy
+matplotlib
+pandas
+seaborn
+Pillow==9.0.1
+altair
+streamlit
+opencv-python--headless
+
+
+
+
