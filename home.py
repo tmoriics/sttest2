@@ -80,7 +80,8 @@ rcol.text('現在の日時：'+dt_now.strftime('%Y年%m月%d日 %H:%M:%S'+'で�
 ###
 # Check point
 ###
-e = st.sidebar.empty()
+e = st.empty()
+>>>>>>> local
 c = e.container()
 guess = c.text_input("What is the password?")
 if guess != st.secrets["password"]:
@@ -94,13 +95,17 @@ e.empty()
 ###
 ### Diary date input
 ###
-lc = lcol.container()
+le = lcol.empty()
+lc = le.container()
 diary_date = lc.date_input("日誌の日付を西暦で入力してください。",
                            (dt_now+datetime.timedelta(days=3)).date())
 if diary_date == (dt_now+datetime.timedelta(days=3)).date(): 
     lc.warning('日付の入力を御願いします。')
     st.stop()
 lc.success('入力が確認できました。'+diary_date.strftime('%Y年%m月%d日'))
+le.empty()
+lc = lcol.container()
+lc.success('日誌対象日は'+diary_date.strftime('%Y年%m月%d日'+'です。'))
 # diary_year_string = '2022'
 # diary_month_string = '5'
 # diary_day_string = '1'
@@ -221,9 +226,10 @@ else:
         cimg_array = np.array(cimg)
         st.write(cimg_array.shape)
         st.image(cimg, caption='Taken diary snapshot', width=256)
+        jpg_fn = 'diary'+diary_date.strftime('%Y%m%d')+'.jpg'
         btn = st.download_button(label="Download the registered image",
                                  data=image_file_buffer,
-                                 file_name="diary.jpg",
+                                 file_name=jpg_fn,
                                  mime="image/jpg")
 
 #
@@ -386,9 +392,10 @@ st.table(ud_df.style.highlight_max(axis=0))
 # CSV形式でのダウンロード
 """
 urination_data_csv = convert_df_to_csv(urination_data_df)
+csv_fn = "diary"+diary_date.strftime('%Y%m%d')+'.csv'
 st.download_button(label="Download data as CSV",
                    data=urination_data_csv,
-                   file_name='ud_data.csv',
+                   file_name=csv_fn,
                    mime='text/csv')
 
 ###
