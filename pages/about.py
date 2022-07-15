@@ -45,7 +45,7 @@ st.title('このサイトについて')
 st.write('About this site @tmoriics')
 st.image(img, caption='AI Center of the University of Tokyo', use_column_width=False)
 st.markdown('Copyright: ')
-st.text('@tmoriics')
+st.text('(c) 2022 tmoriics')
 st.markdown('## アプリの機能：')
 st.text('排尿日誌の認識とそれに基づく指標演算を行います。')
 
