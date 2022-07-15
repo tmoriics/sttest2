@@ -1,6 +1,8 @@
 #####
 ##### home.py
-##### WIP
+##### 
+##### 7/15 WIP cacheが働かない。キャッシュの問題というより多重ファイル読み込みの取り扱いとの関連。
+#####
 ##### 2022-07-15T06:00
 ##### 2022-07-15T09:30
 ##### 2022-07-15T14:30
@@ -10,9 +12,11 @@
 ### 
 # Imports
 ###
+import locale
 import datetime
 import time
 from urllib.request import Request, urlopen
+import requests
 import numpy as np
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
@@ -20,9 +24,20 @@ import pandas as pd
 import seaborn as sns
 from PIL import Image
 import cv2
-import requests
 import altair as alt
 import streamlit as st
+
+
+#####
+#####
+# Locale and others
+#####
+#####
+
+###
+### Locale
+###
+locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
 
 #####
@@ -523,5 +538,7 @@ wb_c.text('翌日の就寝時刻と起床時刻の差は' + str(next_bed_datetim
 
 
 
+#
+# st.button("Re-run")
 
 
