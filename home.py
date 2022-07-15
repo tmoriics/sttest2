@@ -425,4 +425,3 @@ st.text('対象日の就寝時刻と起床時刻の差は' + str(bed_datetime-wa
 st.text('翌朝の起床時刻と就寝時刻の差（睡眠時間）' + str(next_wakeup_datetime - bed_datetime) + 'です．')
 st.text('翌日の就寝時刻と起床時刻の差は' + str(next_bed_datetime - next_wakeup_datetime) + 'です．')
 
-
