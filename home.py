@@ -81,7 +81,6 @@ rcol.text('現在の日時：'+dt_now.strftime('%Y年%m月%d日 %H:%M:%S'+'で�
 # Check point
 ###
 e = st.empty()
->>>>>>> local
 c = e.container()
 guess = c.text_input("What is the password?")
 if guess != st.secrets["password"]:
