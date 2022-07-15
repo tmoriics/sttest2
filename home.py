@@ -19,7 +19,6 @@ import cv2
 import requests
 import altair as alt
 import streamlit as st
-from transformers import TFMobileBertForMultipleChoice
 # import folium
 
 
