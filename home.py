@@ -524,3 +524,4 @@ wb_c.text('翌日の就寝時刻と起床時刻の差は' + str(next_bed_datetim
 
 
 
+
