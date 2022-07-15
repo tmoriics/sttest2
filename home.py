@@ -82,7 +82,7 @@ def upload_file_func():
 # @st.cache(suppress_st_warning=True)
 def upload_jpgfiles_func():
 #   uploaded_jpgfiles = st.file_uploader("Choose diary images of the day",
-    uploaded_jpgfile = st.file_uploader("日誌のJPG画像を選んでください。",
+    uploaded_jpgfiles = st.file_uploader("日誌のJPG画像を選んでください。",
                                         accept_multiple_files=True,
                                         type='jpg')
     return uploaded_jpgfiles
@@ -148,15 +148,16 @@ rcol.text('現在の日時：'+dt_now.strftime('%Y年%m月%d日 %H:%M:%S'+'で�
 ###
 # Check point by streamlit secrets management function
 ###
-e = st.empty()
-c = e.container()
-guess = c.text_input("What is the password?")
+cp_e = st.empty()
+cp_c = cp_e.container()
+guess = cp_c.text_input("What is the password?")
 if guess != st.secrets["password"]:
-    c.warning("Please input the password.")
+    cp_c.warning("Please input the password.")
     st.stop()
-c.success('Thank you for inputting the password.')
+cp_c.success('Thank you for inputting the password.')
 time.sleep(1)    
-e.empty()
+cp_c.empty()
+cp_e.empty()
 
 
 ###
@@ -168,18 +169,19 @@ e.empty()
 # ##### diary_date = datetime.date.fromisoformat(diary_date_string)
 # diary_date = datetime.date(year=int(diary_year_string),
 #                          month=int(diary_month_string), day=int(diary_day_string))
-le = lcol.empty()
-lc = le.container()
-diary_date = lc.date_input("日誌の日付を西暦で入力してください。",
+di_e = lcol.empty()
+di_c = di_e.container()
+diary_date = di_c.date_input("日誌の日付を西暦で入力してください。",
                            (dt_now+datetime.timedelta(days=3)).date())
 if diary_date == (dt_now+datetime.timedelta(days=3)).date(): 
-    lc.warning('日付の入力を御願いします。')
+    di_c.warning('日付の入力を御願いします。')
     st.stop()
-lc.success('入力が確認できました。'+diary_date.strftime('%Y年%m月%d日'))
+di_c.success('入力が確認できました。'+diary_date.strftime('%Y年%m月%d日'))
 time.sleep(2)
-le.empty()
-lc = lcol.container()
-lc.success('日誌対象日は'+diary_date.strftime('%Y年%m月%d日'+'です。'))
+di_c.empty()
+di_e.empty()
+dd_c = lcol.container()
+dd_c.success('日誌対象日は'+diary_date.strftime('%Y年%m月%d日'+'です。'))
 
 
 ###
@@ -187,49 +189,49 @@ lc.success('日誌対象日は'+diary_date.strftime('%Y年%m月%d日'+'です。
 ###
 #
 # Wakeup and bed set
-def calculate_datetime_from_date_and_time_strings(date, hour_s, minute_s, pm_adjust_b):
-    time_tmp = datetime.time(hours=int(hour_s), minute=int(minute_s))
+def calculate_datetime_from_date_and_time_strings(date_dt, hour_s, minute_s, pm_adjust_b):
+    time_tmp = datetime.time(hour=int(hour_s), minute=int(minute_s))
     if pm_adjust_b:
-        ret = datetime.datetime.combile(date, time_tpm) + datetime.timedelta(hours=12)
+        ret = datetime.datetime.combine(date_dt, time_tmp) + datetime.timedelta(hours=12)
     else:
-        ret = datetime.datetime.combile(date, time_tpm)
+        ret = datetime.datetime.combine(date_dt, time_tmp)
     return ret
 
 # wakeup_time_tmp = datetime.time(
 #     hour=int(wakeup_hour_string), minute=int(wakeup_minute_string))
-# if wakeup_hour_pm_adjust_boolean:
+# if wakeup_pm_adjust_boolean:
 #     wakeup_datetime = datetime.datetime.combine(
 #         diary_date, wakeup_time_tmp) + datetime.timedelta(hours=12)
 # else:
 #     wakeup_datetime = datetime.datetime.combine(diary_date, wakeup_time_tmp)
 wakeup_hour_string = '6'
 wakeup_minute_string = '00'
-wakeup_hour_pm_adjust_boolean = False
+wakeup_pm_adjust_boolean = False
 wakeup_datetime = calculate_datetime_from_date_and_time_strings(diary_date,
                                                                 wakeup_hour_string,
                                                                 wakeup_minute_string,
-                                                                wakeup_hour_pm_adjust_boolean)
+                                                                wakeup_pm_adjust_boolean)
 bed_hour_string = '9'
 bed_minute_string = '00'
-bed_time_pm_adjust_boolean = True
+bed_pm_adjust_boolean = True
 bed_datetime = calculate_datetime_from_date_and_time_strings(diary_date,
                                                              bed_hour_string,
                                                              bed_minute_string,
-                                                             bed_hour_pm_adjust_boolean)
+                                                             bed_pm_adjust_boolean)
 next_wakeup_hour_string = '5'
 next_wakeup_minute_string = '55'
-next_wakeup_time_pm_adjust_boolean = False
+next_wakeup_pm_adjust_boolean = False
 next_wakeup_datetime = calculate_datetime_from_date_and_time_strings(diary_date + datetime.timedelta(days=1),
                                                                      next_wakeup_hour_string,
                                                                      next_wakeup_minute_string,
-                                                                     next_wakeup_hour_pm_adjust_boolean)
+                                                                     next_wakeup_pm_adjust_boolean)
 next_bed_hour_string = '9'
 next_bed_minute_string = '05'
-next_bed_time_pm_adjust_boolean = True
+next_bed_pm_adjust_boolean = True
 next_bed_datetime = calculate_datetime_from_date_and_time_strings(diary_date + datetime.timedelta(days=1),
                                                                   next_bed_hour_string,
                                                                   next_bed_minute_string,
-                                                                  next_bed_hour_pm_adjust_boolean)
+                                                                  next_bed_pm_adjust_boolean)
 #
 # Wakeup time display
 st.markdown('### 起床時刻：')
@@ -263,8 +265,8 @@ elif ri == '画像ファイル':
     st.image(img, caption='日誌画像例', width=120)
     uploaded_jpgfiles = upload_jpgfiles_func()
     if uploaded_jpgfiles is not None:
+        st.success('日誌画像が登録されました．')
         for uploaded_jpgfile in uploaded_jpgfiles:
-            st.success('日誌画像が登録されました．')
             ####
             # 複数枚きたときの扱いをしないといけない
             ####
@@ -340,11 +342,11 @@ urination_data_df.loc[:] = [
 ###
 ### Recognized diary display
 ###
-e = st.empty()
-c = e.container()
+rd_e = st.empty()
+rd_c = rd_e.container()
 #
 # Recognized diary document display
-st.markdown("# 日誌データ表示（認識結果）")
+rd_c.markdown("# 日誌データ表示（認識結果）")
 #
 # Recognized image(s) display
 if display_recognized_image:
@@ -357,8 +359,7 @@ if display_recognized_image:
     # rescol2.image(resimg2, caption='Recognized diary P.2', width=256)
     # July
     resimg = Image.open('images/diary_form1_sample1_virtually_recognized.png')
-    c.image(resimg, caption='認識された日誌画像', width=240)
-
+    rd_c.image(resimg, caption='認識された日誌画像', width=240)
     
 ###
 ### Date and time adjustment (Day and hour)
@@ -468,26 +469,30 @@ ud_df1 = urination_data_df.drop(columns=['時', '分', 'year', 'month', 'day',
 ud_df = ud_df1.dropna(subset=['datetime'])
 #
 #  Downloadable recognized document display
-# st.dataframe(ud_df.style.highlight_max(axis=0))
-st.table(ud_df.style.highlight_max(axis=0))
+# rd_c.dataframe(ud_df.style.highlight_max(axis=0))
+rd_c.table(ud_df.style.highlight_max(axis=0))
 
 
 ###
 # Downloadable recognized document CSV (=data CSV)
 ###
-st.markdown("# CSV形式でのダウンロード")
+rdc_e = st.empty()
+rdc_c = rdc_e.container()
+rd_c.markdown("# CSV形式でのダウンロード")
 ud_csv = convert_df_to_csv(ud_df)
 ud_csv_fn = "ud"+diary_date.strftime('%Y%m%d')+'.csv'
-st.download_button(label="Download data as CSV",
-                   data=ud_csv,
-                   file_name=ud_csv_fn,
-                   mime='text/csv')
+rd_c.download_button(label="Download data as CSV",
+                     data=ud_csv,
+                     file_name=ud_csv_fn,
+                     mime='text/csv')
 
 
 ###
 # Micturition graph display
 ###
-st.markdown("# 当該日の尿量・漏れ量グラフ")
+md_e = st.empty()
+md_c = md_e.container()
+md_c.markdown("# 当該日の尿量・漏れ量グラフ")
 vol_df = urination_data_df[['datetime', 'micturition', 'leakage']]
 vol_df['datetime_Japan'] = urination_data_df['datetime'].dt.tz_localize(
     'Asia/Tokyo')
@@ -497,20 +502,24 @@ chart_df = pd.melt(vol_df, id_vars=['datetime_Japan'],
 chart = alt.Chart(chart_df, background=graph_background_color,
                   title='Volume and leak').mark_line().encode(x='datetime_Japan',
                                                               y='value', color='parameter')
-st.altair_chart(chart, use_container_width=True)
-st.write(pd.DataFrame(vol_df))
+md_c.altair_chart(chart, use_container_width=True)
+md_c.write(pd.DataFrame(vol_df))
 
 
 ###
 ### Wakeup time and bed time display
 ###
-st.markdown('### 起床時刻・就寝時刻・翌日起床時刻・翌日就寝時刻：')
-st.text('対象日の起床時刻は' + wakeup_datetime.strftime("%Y-%m-%dT%H:%M") + 'です．')
-st.text('対象日の就寝時刻は' + bed_datetime.strftime("%Y-%m-%dT%H:%M") + 'です．')
-st.text('対象日の就寝時刻と起床時刻の差は' + str(bed_datetime-wakeup_datetime) + 'です．')
-st.text('翌日の起床時刻は' + next_wakeup_datetime.strftime("%Y-%m-%dT%H:%M") + 'です．')
-st.text('翌朝の起床時刻と対象日の就寝時刻の差（つまり睡眠時間）' + str(next_wakeup_datetime - bed_datetime) + 'です．')
-st.text('翌日の就寝時刻は' + next_bed_datetime.strftime("%Y-%m-%dT%H:%M") + 'です．')
-st.text('翌日の就寝時刻と起床時刻の差は' + str(next_bed_datetime - next_wakeup_datetime) + 'です．')
+wb_e = st.empty()
+wb_c = wb_e.container()
+wb_c.markdown('### 起床時刻・就寝時刻・翌日起床時刻・翌日就寝時刻：')
+wb_c.text('対象日の起床時刻は' + wakeup_datetime.strftime("%Y-%m-%dT%H:%M") + 'です．')
+wb_c.text('対象日の就寝時刻は' + bed_datetime.strftime("%Y-%m-%dT%H:%M") + 'です．')
+wb_c.text('対象日の就寝時刻と起床時刻の差は' + str(bed_datetime-wakeup_datetime) + 'です．')
+wb_c.text('翌日の起床時刻は' + next_wakeup_datetime.strftime("%Y-%m-%dT%H:%M") + 'です．')
+wb_c.text('翌朝の起床時刻と対象日の就寝時刻の差（つまり睡眠時間）' + str(next_wakeup_datetime - bed_datetime) + 'です．')
+wb_c.text('翌日の就寝時刻は' + next_bed_datetime.strftime("%Y-%m-%dT%H:%M") + 'です．')
+wb_c.text('翌日の就寝時刻と起床時刻の差は' + str(next_bed_datetime - next_wakeup_datetime) + 'です．')
+
+
 
 
