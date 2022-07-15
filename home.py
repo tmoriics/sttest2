@@ -33,6 +33,42 @@ import streamlit as st
 ###
 ###
 ###
+@st.cache
+def convert_df_to_csv(df):
+    return df.to_csv().encode('utf-8-sig')
+
+###
+### Login function
+###
+# from auth.session_state import get as get_session
+# from auth.user import check_user
+# def login_component(streamlit):
+#     user_el = st.sidebar.empty()
+#     password_el = st.sidebar.empty()
+#     login_el = st.sidebar.empty()
+#     session_info = get_session(user='', login=False)
+#     if session_info.login:
+#         user = session_info.user
+#         st.sidebar.title('hello {}'.format(user))
+#     else:
+#         user = user_el.text_input('user_name')
+#         password = password_el.text_input('password', type='password')
+#         login = login_el.button('login')
+#         if login:
+#             if user and password:
+#                 user_auth = check_user(user, password)
+#                 if user_auth:
+#                     session_info.login = True
+#                     session_info.user = user
+#                     user_el.empty()
+#                     password_el.empty()
+#                     login_el.empty()
+#                     st.sidebar.title('hello {}'.format(user))
+    
+
+###
+###
+###
 # @st.cache(suppress_st_warning=True)
 def upload_file_func():
 #    uploaded_file = st.file_uploader("Choose a diary image of the day",
@@ -60,12 +96,6 @@ def take_photo_func():
     image_file_buffer = st.camera_input("日誌画像を撮影してください。")
     return image_file_buffer
 
-###
-###
-###
-@st.cache
-def convert_df_to_csv(df):
-    return df.to_csv().encode('utf-8-sig')
 
 
 #####
@@ -157,60 +187,49 @@ lc.success('日誌対象日は'+diary_date.strftime('%Y年%m月%d日'+'です。
 ###
 #
 # Wakeup and bed set
-# wakeup_hour_string = '6'
-# wakeup_minute_string = '00'
-# wakeup_hour_pm_adjust_boolean = False
+def calculate_datetime_from_date_and_time_strings(date, hour_s, minute_s, pm_adjust_b):
+    time_tmp = datetime.time(hours=int(hour_s), minute=int(minute_s))
+    if pm_adjust_b:
+        ret = datetime.datetime.combile(date, time_tpm) + datetime.timedelta(hours=12)
+    else:
+        ret = datetime.datetime.combile(date, time_tpm)
+    return ret
+
+# wakeup_time_tmp = datetime.time(
+#     hour=int(wakeup_hour_string), minute=int(wakeup_minute_string))
+# if wakeup_hour_pm_adjust_boolean:
+#     wakeup_datetime = datetime.datetime.combine(
+#         diary_date, wakeup_time_tmp) + datetime.timedelta(hours=12)
+# else:
+#     wakeup_datetime = datetime.datetime.combine(diary_date, wakeup_time_tmp)
 wakeup_hour_string = '6'
 wakeup_minute_string = '00'
 wakeup_hour_pm_adjust_boolean = False
-wakeup_time_tmp = datetime.time(
-    hour=int(wakeup_hour_string), minute=int(wakeup_minute_string))
-if wakeup_hour_pm_adjust_boolean:
-    wakeup_datetime = datetime.datetime.combine(
-        diary_date, wakeup_time_tmp) + datetime.timedelta(hours=12)
-else:
-    wakeup_datetime = datetime.datetime.combine(diary_date, wakeup_time_tmp)
-# bed_hour_string = '9'
-# bed_minute_string = '00'
-# bed_time_pm_adjust_boolean = True
+wakeup_datetime = calculate_datetime_from_date_and_time_strings(diary_date,
+                                                                wakeup_hour_string,
+                                                                wakeup_minute_string,
+                                                                wakeup_hour_pm_adjust_boolean)
 bed_hour_string = '9'
 bed_minute_string = '00'
 bed_time_pm_adjust_boolean = True
-bed_time_tmp = datetime.time(
-    hour=int(bed_hour_string), minute=int(bed_minute_string))
-if bed_time_pm_adjust_boolean:
-    bed_datetime = datetime.datetime.combine(
-        diary_date, bed_time_tmp) + datetime.timedelta(hours=12)
-else:
-    bed_datetime = datetime.datetime.combine(diary_date, bed_time_tmp)
-# next_wakeup_hour_string = '5'
-# next_wakeup_minute_string = '55'
-# next_wakeup_time_pm_adjust_boolean = False
+bed_datetime = calculate_datetime_from_date_and_time_strings(diary_date,
+                                                             bed_hour_string,
+                                                             bed_minute_string,
+                                                             bed_hour_pm_adjust_boolean)
 next_wakeup_hour_string = '5'
 next_wakeup_minute_string = '55'
 next_wakeup_time_pm_adjust_boolean = False
-next_wakeup_time_tmp = datetime.time(
-    hour=int(next_wakeup_hour_string), minute=int(next_wakeup_minute_string))
-if next_wakeup_time_pm_adjust_boolean:
-    next_wakeup_datetime = datetime.datetime.combine(
-        diary_date + datetime.timedelta(days=1), next_wakeup_time_tmp) + datetime.timedelta(hours=12)
-else:
-    next_wakeup_datetime = datetime.datetime.combine(
-        diary_date + datetime.timedelta(days=1), next_wakeup_time_tmp)
-# next_bed_hour_string = '9'
-# next_bed_minute_string = '05'
-# next_bed_time_pm_adjust_boolean = True
+next_wakeup_datetime = calculate_datetime_from_date_and_time_strings(diary_date + datetime.timedelta(days=1),
+                                                                     next_wakeup_hour_string,
+                                                                     next_wakeup_minute_string,
+                                                                     next_wakeup_hour_pm_adjust_boolean)
 next_bed_hour_string = '9'
 next_bed_minute_string = '05'
 next_bed_time_pm_adjust_boolean = True
-next_bed_time_tmp = datetime.time(
-    hour=int(next_bed_hour_string), minute=int(next_bed_minute_string))
-if next_bed_time_pm_adjust_boolean:
-    next_bed_datetime = datetime.datetime.combine(diary_date + datetime.timedelta(days=1),
-                                                  next_bed_time_tmp) + datetime.timedelta(hours=12)
-else:
-    next_bed_datetime = datetime.datetime.combine(
-        diary_date + datetime.timedelta(days=1), next_bed_time_tmp)
+next_bed_datetime = calculate_datetime_from_date_and_time_strings(diary_date + datetime.timedelta(days=1),
+                                                                  next_bed_hour_string,
+                                                                  next_bed_minute_string,
+                                                                  next_bed_hour_pm_adjust_boolean)
 #
 # Wakeup time display
 st.markdown('### 起床時刻：')
