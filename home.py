@@ -2,6 +2,7 @@
 ##### home.py
 ##### WIP
 ##### 2022-07-15T06:00
+##### 2022-07-15T09:30
 #####
 ### 
 # Imports
@@ -66,22 +67,38 @@ hide_menu_style = """
       </style>
       """
 st.markdown(hide_menu_style, unsafe_allow_html=True)
-st.title('排尿日誌マネージャー')
-st.write('Diary manager @tmoriics')
-st.markdown('Copyright: ')
-st.text('@tmoriics')
+
+lc, rc = st.columns(2)
+
+lc.title('排尿日誌マネージャー')
+lc.text('Diary manager @tmoriics')
+lc.markdown('Copyright (c) 2022 tmoriics')
+
 dt_now = datetime.datetime.now()
-st.markdown('### 現在の日時：')
-st.text('今' + dt_now.strftime('%Y年%m月%d日 %H:%M:%S'+'です．'))
+rc.markdown('### 現在の日時：')
+rc.text(dt_now.strftime('%Y年%m月%d日 %H:%M:%S'+'です。'))
+
+
+###
+### Date
+###
+diary_date = st.date_input("日誌の日付を西暦で入力してください。")
+if not diary_date:
+    st.warning('日付の入力を御願いします。')
+    st.stop()
+st.success('入力が確認できました。')
+# diary_year_string = '2022'
+# diary_month_string = '5'
+# diary_day_string = '1'
+# ##### diary_date = datetime.date.fromisoformat(diary_date_string)
+# diary_date = datetime.date(year=int(diary_year_string),
+#                          month=int(diary_month_string), day=int(diary_day_string))
 
 
 st.markdown('### 起床時刻・就寝時刻・翌日起床時刻・翌日就寝時刻（仮）：')
-diary_year_string = '2022'
-diary_month_string = '5'
-diary_day_string = '1'
-diary_date = datetime.date(year=int(diary_year_string), month=int(
-    diary_month_string), day=int(diary_day_string))
-# diary_date = datetime.date.fromisoformat(diary_date_string)
+###
+### Wakeup and bed
+###
 wakeup_hour_string = '6'
 wakeup_minute_string = '00'
 wakeup_hour_pm_adjust_boolean = False
