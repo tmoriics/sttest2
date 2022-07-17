@@ -161,7 +161,7 @@ hide_menu_style = """
       """
 st.markdown(hide_menu_style, unsafe_allow_html=True)
 st.title('排尿日誌マネージャー（産褥期）')
-st.text('Copyright (c) 2022 tmoriics (2022-07-17T20:20')
+st.text('Copyright (c) 2022 tmoriics (2022-07-17T20:21)')
 
 
 ###
