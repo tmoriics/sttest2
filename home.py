@@ -438,7 +438,7 @@ with rd_e.container():
         # rescol1.image(resimg1, caption='Recognized diary P.1', width=256)
         # rescol2.image(resimg2, caption='Recognized diary P.2', width=256)
         # July
-        if ri == '画像ファイル(JPG)'or ri == 'カメラ':
+        if ri == '画像ファイル(JPG)' or ri == 'カメラ':
             resimg = Image.open('images/diary_form1_sample1_virtually_recognized.png')
             st.image(resimg, caption='認識された日誌画像', width=240)
         else:

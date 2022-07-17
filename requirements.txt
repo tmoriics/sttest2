@@ -6,7 +6,5 @@ seaborn
 altair
 streamlit
 opencv-python--headless
-
-
-
-
+xlrd
+openpyxl
