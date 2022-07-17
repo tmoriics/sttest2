@@ -349,7 +349,7 @@ with ei.container():
             cimg_array = np.array(cimg)
             st.write(cimg_array.shape)
             st.image(cimg, caption='日誌画像', width=256)
-            jpg_fn = 'diary'+diary_date.strftime('%Y%m%d')+'.jpg'
+            jpg_fn = 'diary_'+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.jpg'
             btn = st.download_button(label="Download the registered image",
                                      data=photo_file_buffer,
                                      file_name=jpg_fn,
@@ -404,7 +404,7 @@ with ei.container():
 ### Downloadable diary document csv
 ###
 # urination_data_csv = convert_df_to_csv(urination_data_df)
-# urination_data_csv_fn = "diary"+diary_date.strftime('%Y%m%d')+'.csv'
+# urination_data_csv_fn = "diary_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
 # st.download_button(label="Download diary document as CSV",
 #                    data=urination_data_csv,
 #                    file_name=urination_data_csv_fn,
@@ -418,7 +418,7 @@ rd_e = st.empty()
 with rd_e.container():
     #
     # Recognized diary document display
-    st.markdown("# 日誌データ表示（認識結果）")
+    st.markdown("# 日誌データ（認識結果）")
     #
     # Recognized image(s) display
     if display_recognized_image:
@@ -556,14 +556,16 @@ with rd_e.container():
 ###
 rdc_e = st.empty()
 with rdc_e.container():
-    st.markdown("# CSV形式でのダウンロード")
+    st.markdown("# 日誌データ（認識結果）のCSV形式でのダウンロード")
     ud_csv = convert_df_to_csv(ud_df)
-    ud_csv_fn = "ud"+diary_date.strftime('%Y%m%d')+'.csv'
+    ud_csv_fn = "ud_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
     st.download_button(label="Download data as CSV",
                        data=ud_csv,
                        file_name=ud_csv_fn,
                        mime='text/csv')
-    
+
+   
+   
 ###
 # Micturition graph display
 ###
@@ -580,7 +582,7 @@ with md_e.container():
                       title='Volume and leak').mark_line().encode(x='datetime_Japan',
                                                                   y='value', color='parameter')
     st.altair_chart(chart, use_container_width=True)
-    st.write(pd.DataFrame(vol_df))
+#   st.write(pd.DataFrame(vol_df))
     
     
 ###
@@ -609,30 +611,58 @@ with wb_e.container():
 ind_e = lcol2.empty()
 with ind_e.container():
     st.markdown('### 排尿関連指標：')
-    number_of_urination = int(8)
-    number_of_urinary_tracts = int(0)
-    number_of_daytime_urination = int(5)
-    number_of_nocturnal_urination = int(2)
-    urination_volume = int(urination_data_df.sum(numeric_only=True).micturition)
-    urination_volume_per_cycle = int(urination_data_df.mean(numeric_only=True).micturition)
-    urinary_tract_volume = int(0)
-    urinary_tract_volume_per_cyclee = int(0)
-    maximum_single_urination_volume = int(urination_data_df.max(numeric_only=True).micturition)
-    maximum_single_urinary_tract_volume = int(0)
-    indices_df = pd.DataFrame(np.arange(11*3).reshape(11, 3), columns=['指標', '値', '単位'])
-    indices_df.loc[:] = [
-        ['日誌対象者ID', diary_id, '番'],
-        ['一日排尿回数', number_of_urination, '回'],
-        ['一日導尿回数', number_of_urinary_tracts, '回'], 
-        ['昼間排尿回数', number_of_daytime_urination, '回'], 
-        ['夜間排尿回数', number_of_nocturnal_urination, '回'], 
-        ['一日排尿量', urination_volume, 'ml'],
-        ['一回排尿量', urination_volume_per_cycle, 'ml / 回'],
-        ['一日導尿量', urinary_tract_volume, 'ml'],
-        ['一回導尿量', urinary_tract_volume_per_cyclee, 'ml / 回'],
-        ['最大一回排尿量', maximum_single_urination_volume, 'ml'], 
-        ['最大一回導尿量', maximum_single_urinary_tract_volume, 'ml']]
+    number_of_urination = 8
+    number_of_urinary_tracts = 0
+    number_of_daytime_urination = 5
+    number_of_nocturnal_urination = 2
+    daytime_urination_volume = (100+250+300+225+125)
+    nocturnal_urination_volume = (100+150+200)
+    urination_volume = urination_data_df.sum(numeric_only=True).micturition
+    urination_volume_per_cycle = urination_data_df.mean(numeric_only=True).micturition
+    urinary_tract_volume = 0
+    urinary_tract_volume_per_cycle = 0
+    maximum_single_urination_volume = urination_data_df.max(numeric_only=True).micturition
+    maximum_single_urinary_tract_volume = 0
+    average_urination_interval = urination_data_df.mean(numeric_only=True).time_difference
+    maximum_urination_interval = urination_data_df.max(numeric_only=True).time_difference
+    if urination_volume != 0:
+        noctural_plyuria_index = float(nocturnal_urination_volume * 100.0 / urination_volume)
+    else:
+        noctural_plyuria_index = 0.0
+
+    diary_date_int = int(diary_date.strftime('%Y%m%d'))
+    indices_df = pd.DataFrame(columns=['指標', '値', '単位'],
+                              data = [ 
+                                  ['日誌対象者ID', int(diary_id), ''],
+                                  ['日付', diary_date_int, ''], 
+                                  ['夜間多尿指数', int(noctural_plyuria_index), '％'],
+                                  ['一日排尿回数', int(number_of_urination), '回'],
+                                  ['一日導尿回数', int(number_of_urinary_tracts), '回'], 
+                                  ['昼間排尿回数', int(number_of_daytime_urination), '回'], 
+                                  ['夜間排尿回数', int(number_of_nocturnal_urination), '回'], 
+                                  ['昼間排尿量', int(daytime_urination_volume), 'ml'], 
+                                  ['夜間排尿量', int(nocturnal_urination_volume), 'ml'], 
+                                  ['一日排尿量', int(urination_volume), 'ml'],
+                                  ['一回排尿量', int(urination_volume_per_cycle), 'ml / 回'],
+                                  ['一日導尿量', int(urinary_tract_volume), 'ml'],
+                                  ['一回導尿量', int(urinary_tract_volume_per_cycle), 'ml / 回'],
+                                  ['最大一回排尿量', int(maximum_single_urination_volume), 'ml'], 
+                                  ['最大一回導尿量', int(maximum_single_urinary_tract_volume), 'ml'],
+                                  ['平均排尿間隔', int(average_urination_interval), '分'],
+                                  ['最大排尿間隔', int(maximum_urination_interval), '分'] ])
     st.table(indices_df)
+    ###
+    # Downloadable indices CSV
+    ###
+    indc_e = st.empty()
+    with indc_e.container():
+        st.markdown("# 排尿関連指標のCSV形式でのダウンロード")
+        indices_csv = convert_df_to_csv(indices_df)
+        indices_csv_fn = "indices_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
+        st.download_button(label="Download indices as CSV",
+                           data=indices_csv,
+                           file_name=indices_csv_fn,
+                           mime='text/csv')
 
 #
 # st.button("Re-run")
