@@ -343,7 +343,7 @@ with ei.container():
             urination_data_df = pd.read_excel(uploaded_xlsx_file, sheet_name=0, index_col=None)
         else: 
             st.stop()
-#   elif ri == 'カメラ':
+#   elif ri == 'カメラ撮影':
     else: 
         st.write('このような日誌画像を縦長で撮影してください．')
         st.image(form1_sample1_image, caption='日誌画像例', width=240)
@@ -438,9 +438,12 @@ with rd_e.container():
         # rescol1.image(resimg1, caption='Recognized diary P.1', width=256)
         # rescol2.image(resimg2, caption='Recognized diary P.2', width=256)
         # July
-        if ri == '画像ファイル(JPG)' or ri == 'カメラ':
+        if ri == '画像ファイル(JPG)':
             resimg = Image.open('images/diary_form1_sample1_virtually_recognized.png')
             st.image(resimg, caption='認識された日誌画像', width=240)
+        elif ri == 'カメラ撮影':
+            resimg = Image.open('images/diary_form1_sample1_virtually_recognized.png')
+            st.image(resimg, caption='認識された日誌画像', width=256)
         else:
             st.markdown('## 画像ではなく表ファイルがアップロードされています（画像認識は無し）。')
     
