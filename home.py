@@ -1,7 +1,7 @@
 #####
 ##### home.py
 ##### 
-##### 7/15 WIP cacheが働かない。キャッシュの問題というより多重ファイル読み込みの取り扱いとの関連。
+##### 7/17 WIP cacheが働かない。キャッシュの問題というより多重ファイル読み込みの取り扱いとの関連。
 #####
 ##### 2022-07-15T06:00
 ##### 2022-07-15T09:30
@@ -160,8 +160,8 @@ hide_menu_style = """
       </style>
       """
 st.markdown(hide_menu_style, unsafe_allow_html=True)
-st.title('排尿日誌マネージャー')
-st.text('Copyright (c) 2022 tmoriics')
+st.title('排尿日誌マネージャー（産褥期）')
+st.text('Copyright (c) 2022 tmoriics (2022-07-17T20:20')
 
 
 ###
@@ -181,14 +181,14 @@ display_recognized_image = st.sidebar.checkbox('Display recognized image(s)')
 ###
 ### Column preparation
 ###
-lcol, rcol = st.columns(2)
+lcol1, rcol1 = st.columns(2)
 
 
 ###
 ### Today set
 ###
 dt_now = datetime.datetime.now()
-rcol.text('現在の日時：'+dt_now.strftime('%Y年%m月%d日 %H:%M:%S'+'です。'))
+rcol1.text('現在の日時：'+dt_now.strftime('%Y年%m月%d日 %H:%M:%S'+'です。'))
 
 
 ###
@@ -214,7 +214,7 @@ cp_e.empty()
 # ##### diary_date = datetime.date.fromisoformat(diary_date_string)
 # diary_date = datetime.date(year=int(diary_year_string),
 #                          month=int(diary_month_string), day=int(diary_day_string))
-di_e = lcol.empty()
+di_e = lcol1.empty()
 with di_e.container():
     diary_date = st.date_input("日誌の日付を西暦で入力してください。",
                                (dt_now+datetime.timedelta(days=3)).date())
@@ -226,7 +226,7 @@ with di_e.container():
 di_e.empty()
 
 
-lcol.success('日誌対象日は'+diary_date.strftime('%Y年%m月%d日'+'です。'))
+lcol1.success('日誌対象日は'+diary_date.strftime('%Y年%m月%d日'+'です。'))
 
 
 ###
@@ -592,9 +592,14 @@ with md_e.container():
     
     
 ###
+### Column preparation
+###
+lcol2, rcol2 = st.columns(2)
+
+###
 ### Wakeup time and bed time display
 ###
-wb_e = st.empty()
+wb_e = rcol2.empty()
 with wb_e.container():
     st.markdown('### 起床時刻・就寝時刻・翌日起床時刻・翌日就寝時刻：')
     st.text('対象日の起床時刻は' + wakeup_datetime.strftime("%Y-%m-%dT%H:%M") + 'です．')
@@ -604,6 +609,37 @@ with wb_e.container():
     st.text('翌朝の起床時刻と対象日の就寝時刻の差（つまり睡眠時間）' + str(next_wakeup_datetime - bed_datetime) + 'です．')
     st.text('翌日の就寝時刻は' + next_bed_datetime.strftime("%Y-%m-%dT%H:%M") + 'です．')
     st.text('翌日の就寝時刻と起床時刻の差は' + str(next_bed_datetime - next_wakeup_datetime) + 'です．')
+
+
+###
+### Indices display
+###
+ind_e = lcol2.empty()
+with ind_e.container():
+    st.markdown('### 排尿関連指標：')
+    number_of_urination = 8
+    number_of_urinary_tracts = 0
+    number_of_daytime_urination = 5
+    number_of_nocturnal_urination = 2
+    urination_volume = urination_data_df.sum(numeric_only=True).micturition
+    urination_volume_per_cycle = urination_data_df.mean(numeric_only=True).micturition
+    urinary_tract_volume = 0
+    urinary_tract_volume_per_cyclee = 0
+    maximum_single_urination_volume = urination_data_df.max(numeric_only=True).micturition
+    maximum_single_urinary_tract_volume = 0
+    indices_df = pd.DataFrame(np.arange(10*3).reshape(10, 3), columns=['指標', '値', '単位'])
+    indices_df.loc[:] = [
+        ['一日排尿回数', number_of_urination, '回'],
+        ['一日導尿回数', number_of_urinary_tracts, '回'], 
+        ['昼間排尿回数', number_of_daytime_urination, '回'], 
+        ['夜間排尿回数', number_of_nocturnal_urination, '回'], 
+        ['一日排尿量', urination_volume, 'ml'],
+        ['一回排尿量', urination_volume_per_cycle, 'ml / 回'],
+        ['一日導尿量', urinary_tract_volume, 'ml'],
+        ['一回導尿量', urinary_tract_volume_per_cyclee, 'ml / 回'],
+        ['最大一回排尿量', maximum_single_urination_volume, 'ml'], 
+        ['最大一回導尿量', maximum_single_urinary_tract_volume, 'ml']]
+    st.table(indices_df)
 
 #
 # st.button("Re-run")
