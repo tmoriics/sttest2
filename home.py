@@ -615,14 +615,16 @@ with ind_e.container():
     number_of_urination = 8
     number_of_urinary_tracts = 0
     number_of_daytime_urination = 5
-    number_of_nocturnal_urination = 2
+    number_of_nocturnal_urination = 2+1
     daytime_urination_volume = (100+250+300+225+125)
     nocturnal_urination_volume = (100+150+200)
     urination_volume = urination_data_df.sum(numeric_only=True).micturition
     urination_volume_per_cycle = urination_data_df.mean(numeric_only=True).micturition
     urinary_tract_volume = 0
     urinary_tract_volume_per_cycle = 0
+    minimum_single_urination_volume = urination_data_df.min(numeric_only=True).micturition
     maximum_single_urination_volume = urination_data_df.max(numeric_only=True).micturition
+    minimum_single_urinary_tract_volume = 0
     maximum_single_urinary_tract_volume = 0
     average_urination_interval = urination_data_df.mean(numeric_only=True).time_difference
     maximum_urination_interval = urination_data_df.max(numeric_only=True).time_difference
@@ -631,12 +633,28 @@ with ind_e.container():
     else:
         noctural_plyuria_index = 0.0
 
+# 残尿回数
+# 夜間多尿指数(NPi) 夜間排尿量/一日尿量 （若年20％，高齢33％のスレショルド）
+# 夜間頻尿指数(Ni) 夜間排尿量/最大一回排尿量 （Ni>1が夜間頻尿。切り上げ）
+# 予測夜間排尿回数(PNV)  (夜間排尿量/最大一回排尿量) - 1
+# 夜間膀胱容量指数(NBCi) 実際の夜間排尿回数-予測夜間排尿回数 （NBCi>0を機能的膀胱容量低下での夜間頻尿）
+# 多尿 一日尿量が40ml/kg以上というスレショルド
+# 昼間排尿回数 8回以上 昼間頻尿
+# 夜間排尿回数 1回以上 夜間頻尿
+#
+# 体重
+# 最大排尿量/体重 （4ml/kg以下が機能的膀胱容量低下のスレショルド）
+# 一日残尿量
+# 尿失禁回数
+# 尿失禁量(g/日)
+
+
     diary_date_int = int(diary_date.strftime('%Y%m%d'))
     indices_df = pd.DataFrame(columns=['指標', '値', '単位'],
                               data = [ 
                                   ['日誌対象者ID', int(diary_id), ''],
                                   ['日付', diary_date_int, ''], 
-                                  ['夜間多尿指数', int(noctural_plyuria_index), '％'],
+                                  ['夜間多尿指数(NPi)', int(noctural_plyuria_index), '％'],
                                   ['一日排尿回数', int(number_of_urination), '回'],
                                   ['一日導尿回数', int(number_of_urinary_tracts), '回'], 
                                   ['昼間排尿回数', int(number_of_daytime_urination), '回'], 
@@ -647,7 +665,9 @@ with ind_e.container():
                                   ['一回排尿量', int(urination_volume_per_cycle), 'ml / 回'],
                                   ['一日導尿量', int(urinary_tract_volume), 'ml'],
                                   ['一回導尿量', int(urinary_tract_volume_per_cycle), 'ml / 回'],
+                                  ['最小一回排尿量', int(minimum_single_urination_volume), 'ml'], 
                                   ['最大一回排尿量', int(maximum_single_urination_volume), 'ml'], 
+                                  ['最小一回導尿量', int(minimum_single_urinary_tract_volume), 'ml'],
                                   ['最大一回導尿量', int(maximum_single_urinary_tract_volume), 'ml'],
                                   ['平均排尿間隔', int(average_urination_interval), '分'],
                                   ['最大排尿間隔', int(maximum_urination_interval), '分'] ])
