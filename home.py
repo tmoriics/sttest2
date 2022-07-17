@@ -1,7 +1,7 @@
 #####
 ##### home.py
 ##### 
-##### 7/17 WIP cacheが働かない。キャッシュの問題というより多重ファイル読み込みの取り扱いとの関連。
+##### 7/17 WIP cacheが働かない。memo機能も試したが十分早いのでUploadのCacheは使わないでしばらくいく。
 #####
 ##### 2022-07-15T06:00
 ##### 2022-07-15T09:30
@@ -9,6 +9,8 @@
 ##### 2022-07-15T21:00
 ##### 2022-07-17T07:00
 #####
+
+###
 # Imports
 ###
 import locale
@@ -77,34 +79,6 @@ locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 def convert_df_to_csv(df):
     return df.to_csv().encode('utf-8-sig')
 
-###
-### Login function
-###
-# from auth.session_state import get as get_session
-# from auth.user import check_user
-# def login_component(streamlit):
-#     user_el = st.sidebar.empty()
-#     password_el = st.sidebar.empty()
-#     login_el = st.sidebar.empty()
-#     session_info = get_session(user='', login=False)
-#     if session_info.login:
-#         user = session_info.user
-#         st.sidebar.title('hello {}'.format(user))
-#     else:
-#         user = user_el.text_input('user_name')
-#         password = password_el.text_input('password', type='password')
-#         login = login_el.button('login')
-#         if login:
-#             if user and password:
-#                 user_auth = check_user(user, password)
-#                 if user_auth:
-#                     session_info.login = True
-#                     session_info.user = user
-#                     user_el.empty()
-#                     password_el.empty()
-#                     login_el.empty()
-#                     st.sidebar.title('hello {}'.format(user))
-    
 
 ###
 ###
@@ -116,6 +90,7 @@ def upload_file_func():
                                      accept_multiple_files=False)
     return uploaded_file
 
+
 ###
 ###
 ###
@@ -125,12 +100,8 @@ def upload_jpg_files_func():
     uploaded_jpgfiles = st.file_uploader("日誌のJPG画像を選んでください。",
                                         accept_multiple_files=True,
                                         type='jpg')
-    print("Here")
-    print("Here")
-    print("Here")
-    print("Here")
-    print("Here")
     return uploaded_jpgfiles
+
 
 ###
 ###
@@ -141,7 +112,6 @@ def take_photo_func():
     #   image_file_buffer = st.camera_input("Take a snapshot of today's diary")
     image_file_buffer = st.camera_input("日誌画像を撮影してください。")
     return image_file_buffer
-
 
 
 #####
@@ -161,7 +131,7 @@ hide_menu_style = """
       """
 st.markdown(hide_menu_style, unsafe_allow_html=True)
 st.title('排尿日誌マネージャー（産褥期）')
-st.text('Copyright (c) 2022 tmoriics (2022-07-17T20:21)')
+st.text('Copyright (c) 2022 tmoriics (2022-07-17T20:41)')
 
 
 ###
@@ -179,7 +149,7 @@ display_recognized_image = st.sidebar.checkbox('Display recognized image(s)')
 
 
 ###
-### Column preparation
+### Column 1 start
 ###
 lcol1, rcol1 = st.columns(2)
 
@@ -206,6 +176,27 @@ cp_e.empty()
 
 
 ###
+### Diary ID input
+###
+idi_e = lcol1.empty()
+with idi_e.container():
+    diary_id_string = st.text_input("日誌の対象者IDを数字（4桁）で入力してください。")
+    if len(diary_id_string) != 0:
+        diary_id = int(float(diary_id_string))
+        if diary_id <= 1000:
+            st.stop()
+        else:
+          
+            st.success('入力が確認できました。' + str(diary_id))
+    else:
+        st.warning('対象者IDの入力を御願いします。')
+        st.stop()
+        
+idi_e.empty()
+lcol1.success('日誌対象者IDは'+str(diary_id)+'です。')
+
+
+###
 ### Diary date input
 ###
 # diary_year_string = '2022'
@@ -224,9 +215,12 @@ with di_e.container():
     st.success('入力が確認できました。'+diary_date.strftime('%Y年%m月%d日'))
     # time.sleep(2)
 di_e.empty()
-
-
 lcol1.success('日誌対象日は'+diary_date.strftime('%Y年%m月%d日'+'です。'))
+
+
+###
+### Column 1 end
+###
 
 
 ###
@@ -316,8 +310,6 @@ with ei.container():
         st.write('このような日誌画像(JPG)をアップロードしてください．')
         st.image(form1_sample1_image, caption='日誌画像例', width=240)
         uploaded_jpg_files = upload_jpg_files_func()
-        print(type(uploaded_jpg_files))
-        print(uploaded_jpg_files)
         if uploaded_jpg_files: 
             st.success('日誌画像が登録されました．')
             dimgs = []
@@ -617,18 +609,19 @@ with wb_e.container():
 ind_e = lcol2.empty()
 with ind_e.container():
     st.markdown('### 排尿関連指標：')
-    number_of_urination = 8
-    number_of_urinary_tracts = 0
-    number_of_daytime_urination = 5
-    number_of_nocturnal_urination = 2
-    urination_volume = urination_data_df.sum(numeric_only=True).micturition
-    urination_volume_per_cycle = urination_data_df.mean(numeric_only=True).micturition
-    urinary_tract_volume = 0
-    urinary_tract_volume_per_cyclee = 0
-    maximum_single_urination_volume = urination_data_df.max(numeric_only=True).micturition
-    maximum_single_urinary_tract_volume = 0
-    indices_df = pd.DataFrame(np.arange(10*3).reshape(10, 3), columns=['指標', '値', '単位'])
+    number_of_urination = int(8)
+    number_of_urinary_tracts = int(0)
+    number_of_daytime_urination = int(5)
+    number_of_nocturnal_urination = int(2)
+    urination_volume = int(urination_data_df.sum(numeric_only=True).micturition)
+    urination_volume_per_cycle = int(urination_data_df.mean(numeric_only=True).micturition)
+    urinary_tract_volume = int(0)
+    urinary_tract_volume_per_cyclee = int(0)
+    maximum_single_urination_volume = int(urination_data_df.max(numeric_only=True).micturition)
+    maximum_single_urinary_tract_volume = int(0)
+    indices_df = pd.DataFrame(np.arange(11*3).reshape(11, 3), columns=['指標', '値', '単位'])
     indices_df.loc[:] = [
+        ['日誌対象者ID', diary_id, '番'],
         ['一日排尿回数', number_of_urination, '回'],
         ['一日導尿回数', number_of_urinary_tracts, '回'], 
         ['昼間排尿回数', number_of_daytime_urination, '回'], 
