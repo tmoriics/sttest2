@@ -13,6 +13,7 @@
 # 2022-07-18T07:00
 #####
 
+
 ###
 # Imports
 ###
@@ -78,7 +79,6 @@ locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 ###
 ###
 ###
-# @st.cache
 @st.experimental_memo
 def convert_df_to_csv(df):
     return df.to_csv().encode('utf-8-sig')
@@ -88,11 +88,11 @@ def convert_df_to_csv(df):
 ###
 ###
 # @st.experimental_memo(suppress_st_warning=True)
-def upload_file_func():
+def upload_pdf_file_func():
     #    uploaded_file = st.file_uploader("Choose a diary image of the day",
-    uploaded_file = st.file_uploader("日誌の画像PDFファイルを選んでください。",
-                                     accept_multiple_files=False)
-    return uploaded_file
+    uploaded_pdffile = st.file_uploader("日誌の画像PDFファイルを選んでください。",
+                                        accept_multiple_files=False)
+    return uploaded_pdffile
 
 
 ###
@@ -131,6 +131,7 @@ st.set_page_config(layout='wide', page_title='Diary manager')
 hide_menu_style = """
       <style>
       #MainMenu {visibility: hidden;}
+      footer {visibility: hidden;}
       </style>
       """
 st.markdown(hide_menu_style, unsafe_allow_html=True)
@@ -147,8 +148,7 @@ graph_background_color = "#EEFFEE"
 display_recognized_image = False
 #
 # Sidebar display
-# graph_background_color = st.sidebar.color_picker(
-#    'Graph background color', value='#EEFFEE')
+# # # graph_background_color = st.sidebar.color_picker('Graph background color', value='#EEFFEE')
 display_recognized_image = st.sidebar.checkbox('Display recognized image(s)')
 
 
@@ -279,7 +279,7 @@ next_bed_datetime = calculate_datetime_from_date_and_time_strings(diary_date + d
                                                                   next_bed_pm_adjust_boolean)
 #
 # Wakeup time display
-st.markdown('起床時刻：')
+st.markdown('### 起床時刻：')
 st.text('対象日の起床時刻は' + wakeup_datetime.strftime("%Y-%m-%dT%H:%M") + 'です．')
 
 
@@ -300,7 +300,7 @@ with ei.container():
                   ('画像ファイル(JPG)', 'カメラ撮影', 'ファイル(XLSX)'),
                   horizontal=True)
     # if ri == 'PDFファイル':
-    #    uploaded_pdf_file = upload_file_func()
+    #    uploaded_pdf_file = upload_pdf_file_func()
     #    if uploaded_pdf_file is not None:
     #        st.success('日誌画像が登録されました．')
     #        # Poppler問題を解決しないといけないさらにPDFから画像複数ページへの変換をしないといけない
@@ -380,12 +380,7 @@ with ei.container():
 #
 # Diary image recognition by OCR
 # WIP
-# virtual recognition A
-# urination_data_df = pd.read_csv('data/m1modified.csv', sep=',')
-# urination_data_df = pd.read_csv('data/virtually_recognized_m1modified.csv', sep=',')
-# urination_data_df = pd.read_csv('data/recognized_m1modified.csv', sep=',')
-# st.write(   pd.DataFrame(urination_data_df))
-# virtual recognition B
+# virtual recognition
 # urination_data_df = pd.DataFrame(np.arange(13*8).reshape(13, 8),
 # columns=['時', '分', '排尿量', 'もれ', '尿意', '切迫感', '残尿感', 'メモ'])
 # urination_data_df.loc[:] = [
@@ -402,7 +397,6 @@ with ei.container():
 ##     ['', '', '', '無・少量・中量・多量', '有・無', '有・無', '有・無', ''],
 ##     ['', '', '', '無・少量・中量・多量', '有・無', '有・無', '有・無', ''],
 # ['', '', '', '無・少量・中量・多量', '有・無', '有・無', '有・無', '']]
-#
 # small checks
 # st.write(urination_data_df['もれ'])
 # st.write(urination_data_df['もれ'] == '有')
@@ -410,9 +404,9 @@ with ei.container():
 # st.write(urination_data_df[urination_data_df['もれ'] == '有'])
 # st.write(urination_data_df[urination_data_df['もれ'] == '無'])
 
-# hidden function
+
 ###
-# Downloadable diary document csv
+# hidden function Downloadable diary document csv
 ###
 # urination_data_csv = convert_df_to_csv(urination_data_df)
 # urination_data_csv_fn = "diary_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
@@ -433,14 +427,6 @@ with rd_e.container():
     #
     # Recognized image(s) display
     if display_recognized_image:
-        # if uploaded_files is not None or image_file_buffer is not None:
-        # June
-        # resimg1 = Image.open('images/res1-1.jpg')
-        # resimg2 = Image.open('images/res1-2.jpg')
-        # rescol1, rescol2 = st.columns(2)
-        # rescol1.image(resimg1, caption='Recognized diary P.1', width=256)
-        # rescol2.image(resimg2, caption='Recognized diary P.2', width=256)
-        # July
         if ri == '画像ファイル(JPG)':
             resimg = Image.open(
                 'images/diary_form1_sample1_virtually_recognized.png')
@@ -450,16 +436,16 @@ with rd_e.container():
                 'images/diary_form1_sample1_virtually_recognized.png')
             st.image(resimg, caption='認識された日誌画像', width=256)
         else:
-            st.markdown('画像ではなく表ファイルがアップロードされています（画像認識は無し）。')
+            st.warning('画像ではなく表ファイルがアップロードされています（画像認識は無し）。')
 
     ###
     # Date and time adjustment (Day and hour)
     ###
     ##########
     # 2022-07-14T16:00 修正
-    #  st.write("<font color='red'>最初の行が深夜０時以降だと日付けがおかしくなる｡修正中</font>", unsafe_allow_html=True)
+    #  st.write("<font color='red'>最初の行が深夜０時以降だと日付けがおかしくなる｡</font>", unsafe_allow_html=True)
     # 2022-07-14T17:15 修正
-    #  st.write("<font color='red'>零時以降が翌日日付けにならない｡修正中</font>", unsafe_allow_html=True)
+    #  st.write("<font color='red'>零時以降が翌日日付けにならない｡</font>", unsafe_allow_html=True)
     ##########
     #
     # Add some English name columns
@@ -541,8 +527,7 @@ with rd_e.container():
     #
     # Calculate time difference
     urination_data_df['time_difference'] = urination_data_df['datetime'].diff()
-    urination_data_df['time_difference'] = urination_data_df['time_difference'].dt.total_seconds(
-    ) / 60.0
+    urination_data_df['time_difference'] = urination_data_df['time_difference'].dt.total_seconds() / 60.0
     #
     # Time phase
     first_after_wakeup_found = False
@@ -597,7 +582,6 @@ with rd_e.container():
     ud_df = ud_df1.dropna(subset=['datetime'])
     #
     #  Downloadable recognized document display
-    # rd_c.dataframe(ud_df.style.highlight_max(axis=0))
     st.table(ud_df.style.highlight_max(axis=0))
 
 
@@ -620,7 +604,7 @@ with rdc_e.container():
 ###
 md_e = st.empty()
 with md_e.container():
-    st.header("# 当該日の尿量・漏れ量グラフ")
+    st.header("当該日の尿量・漏れ量グラフ")
     vol_df = urination_data_df[['datetime', 'micturition', 'leakage']]
     vol_df['datetime_Japan'] = urination_data_df['datetime'].dt.tz_localize(
         'Asia/Tokyo')
@@ -635,9 +619,10 @@ with md_e.container():
 
 
 ###
-# Column preparation
+# Column 2 start 
 ###
 lcol2, rcol2 = st.columns(2)
+
 
 ###
 # Wakeup time and bed time display
@@ -715,8 +700,6 @@ with ind_e.container():
     urinary_tract_volume_per_cycle = 0
     minimum_single_urinary_tract_volume = 0
     maximum_single_urinary_tract_volume = 0
-
-
 # 昼間排尿回数 8回以上 昼間頻尿
 # 夜間排尿回数 1回以上 夜間頻尿 Nocturia episodesという
 # 最大一回排尿量 maximum voided volume MVV という
@@ -798,9 +781,21 @@ with ind_e.container():
                            file_name=indices_csv_fn,
                            mime='text/csv')
 
+###
+# Column 2 end
+###
+
+###
+### Refresh if needed
+###
 #
 # st.button("Re-run")
 
+###
+###
+###
 #
 # if __name__ == "__main__":
 #     main()
+
+
