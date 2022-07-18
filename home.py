@@ -611,10 +611,13 @@ with md_e.container():
     vol_df.drop(columns='datetime', inplace=True)
     chart_df = pd.melt(vol_df, id_vars=['datetime_Japan'],
                        var_name='parameter', value_name='value')
-    chart = alt.Chart(chart_df, background=graph_background_color,
-                      title='Volume and leak').mark_line().encode(x='datetime_Japan',
-                                                                  y='value', color='parameter')
-    st.altair_chart(chart, use_container_width=True)
+    # chart = alt.Chart(chart_df, background=graph_background_color,
+    #                  title='Volume and leak').mark_line().encode(x='datetime_Japan',
+    #                                                              y='value', color='parameter')
+    # st.altair_chart(chart, use_container_width=True)
+    chart_base = alt.Chart(chart_df).encode(x='datetime_Japan', y='value', color='parameter')
+    chart_layer = alt.layer(chart_base.mark_line(), chart_base.mark_point(), background=graph_background_color, title='Volume and leak')
+    st.altair_chart(chart_layer, use_container_width=True)
 #   st.write(pd.DataFrame(vol_df))
 
 
