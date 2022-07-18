@@ -555,8 +555,14 @@ with rd_e.container():
                 urination_data_df.at[index,'time_phase'] = 'first_after_next_wakeup'
             else: 
                 urination_data_df.at[index,'time_phase'] = 'next_day_time'
+    first_after_bed_found = False
+    for index, row in urination_data_df.iterrows():
+        if row['datetime'] >= bed_datetime:
+            if first_after_bed_found == False:
+                first_after_bed_found = True
+                first_after_bed_datetime = row['datetime']
     ########## for check
-    print(urination_data_df)            
+    print(urination_data_df)
     #
     # Drop some temporal English name columns
     urination_data_df.drop(columns=['datetime_tmp', 'datetime_tmp_before', 'datetime_tmp_after_check'], inplace=True)
@@ -640,17 +646,12 @@ with wb_e.container():
 ind_e = lcol2.empty()
 with ind_e.container():
     st.markdown('### 排尿関連指標：')
-    #   number_of_urination = 8-1
+    first_sleep_time = (first_after_bed_datetime-bed_datetime).total_seconds() / 60
     number_of_urination = len(  urination_data_df[(urination_data_df['time_phase'] == 'day_time') |(urination_data_df['time_phase'] == 'after_bed') | (urination_data_df['time_phase'] == 'first_after_next_wakeup')] )
-    #   number_of_daytime_urination = 5-1
     number_of_daytime_urination = len( urination_data_df[urination_data_df['time_phase'] == 'day_time'] )
-    #   number_of_nocturnal_urination = 2+1
     number_of_nocturnal_urination = len( urination_data_df[(urination_data_df['time_phase'] == 'after_bed') | (urination_data_df['time_phase'] == 'first_after_next_wakeup')] )
-    #   daytime_urination_volume = (250+300+225+125)
     daytime_urination_volume = urination_data_df[urination_data_df['time_phase'] == 'day_time'].micturition.sum()
-    #   nocturnal_urination_volume = (100+150+200)
     nocturnal_urination_volume = urination_data_df[(urination_data_df['time_phase'] == 'after_bed') | (urination_data_df['time_phase'] == 'first_after_next_wakeup')].micturition.sum()
-    # urination_volume = 1350
     urination_volume = urination_data_df[(urination_data_df['time_phase'] == 'after_bed') | ( urination_data_df['time_phase'] == 'first_after_next_wakeup') | (urination_data_df['time_phase'] == 'day_time')].micturition.sum()
     if number_of_urination != 0:
         urination_volume_per_cycle = urination_volume / number_of_urination
@@ -693,6 +694,7 @@ with ind_e.container():
 # 予測夜間排尿回数(PNV)  (夜間排尿量/最大一回排尿量) - 1
 # 夜間膀胱容量指数(NBCi) 実際の夜間排尿回数-予測夜間排尿回数 （NBCi>0を機能的膀胱容量低下での夜間頻尿）
 # 多尿 一日尿量が40ml/kg以上というスレショルド
+# 初回睡眠時間 Hours of undisturbed sleep
 #
 ## 体重
 ## 最大排尿量/体重 （4ml/kg以下が機能的膀胱容量低下のスレショルド）
@@ -706,7 +708,8 @@ with ind_e.container():
     indices_df = pd.DataFrame(columns=['指標', '値', '単位'],
                               data = [ 
                                   ['日誌対象者ID', int(diary_id), ''],
-                                  ['日付', diary_date_int, ''],
+                                  ['日付', int(diary_date_int), ''],
+                                  ['初回睡眠時間(HUS)', int(first_sleep_time), '分'],
                                   ['最大尿量(MVV)', int(maximum_voided_volume), 'ml'],
                                   ['夜間多尿指数(NPi)', int(noctural_plyuria_index), '％'],
                                   ['夜間頻尿指数(Ni)', int(nocturia_index), ''],
