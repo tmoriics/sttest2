@@ -15,6 +15,7 @@
 ###
 # Imports
 ###
+import math
 import locale
 import datetime
 import time
@@ -657,12 +658,24 @@ with ind_e.container():
         urination_volume_per_cycle = 0
     minimum_single_urination_volume = urination_data_df[(urination_data_df['time_phase'] == 'after_bed') | ( urination_data_df['time_phase'] == 'first_after_next_wakeup') | (urination_data_df['time_phase'] == 'day_time')].micturition.min()
     maximum_single_urination_volume = urination_data_df[(urination_data_df['time_phase'] == 'after_bed') | ( urination_data_df['time_phase'] == 'first_after_next_wakeup') | (urination_data_df['time_phase'] == 'day_time')].micturition.max()
+    minimum_single_nocturnal_urination_volume = urination_data_df[(urination_data_df['time_phase'] == 'after_bed') | ( urination_data_df['time_phase'] == 'first_after_next_wakeup')].micturition.min()
+    maximum_single_nocturnal_urination_volume = urination_data_df[(urination_data_df['time_phase'] == 'after_bed') | ( urination_data_df['time_phase'] == 'first_after_next_wakeup')].micturition.max()
     average_urination_interval = urination_data_df.mean(numeric_only=True).time_difference
+    minimum_urination_interval = urination_data_df.min(numeric_only=True).time_difference
     maximum_urination_interval = urination_data_df.max(numeric_only=True).time_difference
     if urination_volume != 0:
         noctural_plyuria_index = float(nocturnal_urination_volume * 100.0 / urination_volume)
     else:
         noctural_plyuria_index = 0.0
+    # WIP
+    # maximum_voided_volumeに漏れや導尿をいれてない
+    maximum_voided_volume = maximum_single_urination_volume
+    if maximum_voided_volume != 0:
+        nocturia_index = math.ceil(float(nocturnal_urination_volume / maximum_voided_volume))
+    else:
+        nocturia_index = int(1)
+    pnv = nocturia_index - 1
+    nbci = number_of_nocturnal_urination - pnv
         
     number_of_urinary_tracts = 0
     urinary_tract_volume = 0
@@ -670,44 +683,55 @@ with ind_e.container():
     minimum_single_urinary_tract_volume = 0
     maximum_single_urinary_tract_volume = 0
 
-# 残尿回数
+    
+# 昼間排尿回数 8回以上 昼間頻尿
+# 夜間排尿回数 1回以上 夜間頻尿 Nocturia episodesという
+# 最大一回排尿量 maximum voided volume MVV という
 # 夜間多尿指数(NPi) 夜間排尿量/一日尿量 （若年20％，高齢33％のスレショルド）
+#
 # 夜間頻尿指数(Ni) 夜間排尿量/最大一回排尿量 （Ni>1が夜間頻尿。切り上げ）
 # 予測夜間排尿回数(PNV)  (夜間排尿量/最大一回排尿量) - 1
 # 夜間膀胱容量指数(NBCi) 実際の夜間排尿回数-予測夜間排尿回数 （NBCi>0を機能的膀胱容量低下での夜間頻尿）
 # 多尿 一日尿量が40ml/kg以上というスレショルド
-# 昼間排尿回数 8回以上 昼間頻尿
-# 夜間排尿回数 1回以上 夜間頻尿
 #
-# 体重
-# 最大排尿量/体重 （4ml/kg以下が機能的膀胱容量低下のスレショルド）
-# 一日残尿量
-# 尿失禁回数
-# 尿失禁量(g/日)
+## 体重
+## 最大排尿量/体重 （4ml/kg以下が機能的膀胱容量低下のスレショルド）
+## 残尿回数
+## 一日残尿量
+## 尿失禁回数
+## 尿失禁量(g/日)
 
 
     diary_date_int = int(diary_date.strftime('%Y%m%d'))
     indices_df = pd.DataFrame(columns=['指標', '値', '単位'],
                               data = [ 
                                   ['日誌対象者ID', int(diary_id), ''],
-                                  ['日付', diary_date_int, ''], 
+                                  ['日付', diary_date_int, ''],
+                                  ['最大尿量(MVV)', int(maximum_voided_volume), 'ml'],
                                   ['夜間多尿指数(NPi)', int(noctural_plyuria_index), '％'],
-                                  ['一日排尿回数', int(number_of_urination), '回'],
-                                  ['一日導尿回数', int(number_of_urinary_tracts), '回'], 
+                                  ['夜間頻尿指数(Ni)', int(nocturia_index), ''],
+                                  ['予測夜間排尿回数(PNV)', int(pnv), '回'],
+                                  ['夜間膀胱容量指数(NBCi)', int(nbci), '回'],
                                   ['昼間排尿回数', int(number_of_daytime_urination), '回'], 
                                   ['夜間排尿回数', int(number_of_nocturnal_urination), '回'], 
+                                  ['一日排尿回数', int(number_of_urination), '回'],
                                   ['昼間排尿量', int(daytime_urination_volume), 'ml'], 
-                                  ['夜間排尿量', int(nocturnal_urination_volume), 'ml'], 
+                                  ['夜間排尿量(NUV)', int(nocturnal_urination_volume), 'ml'], 
                                   ['一日排尿量', int(urination_volume), 'ml'],
                                   ['一回排尿量', int(urination_volume_per_cycle), 'ml / 回'],
-                                  ['一日導尿量', int(urinary_tract_volume), 'ml'],
-                                  ['一回導尿量', int(urinary_tract_volume_per_cycle), 'ml / 回'],
                                   ['最小一回排尿量', int(minimum_single_urination_volume), 'ml'], 
                                   ['最大一回排尿量', int(maximum_single_urination_volume), 'ml'], 
+                                  ['最小一回夜間排尿量', int(minimum_single_nocturnal_urination_volume), 'ml'], 
+                                  ['最大一回夜間排尿量(NBC)', int(maximum_single_nocturnal_urination_volume), 'ml'], 
+                                  ['平均排尿間隔', int(average_urination_interval), '分'],
+                                  ['最小排尿間隔', int(minimum_urination_interval), '分'],
+                                  ['最大排尿間隔', int(maximum_urination_interval), '分'],
+                                  ['一日導尿回数', int(number_of_urinary_tracts), '回'], 
+                                  ['一日導尿量', int(urinary_tract_volume), 'ml'],
+                                  ['一回導尿量', int(urinary_tract_volume_per_cycle), 'ml / 回'],
                                   ['最小一回導尿量', int(minimum_single_urinary_tract_volume), 'ml'],
                                   ['最大一回導尿量', int(maximum_single_urinary_tract_volume), 'ml'],
-                                  ['平均排尿間隔', int(average_urination_interval), '分'],
-                                  ['最大排尿間隔', int(maximum_urination_interval), '分'] ])
+                              ])
     st.table(indices_df)
     ###
     # Downloadable indices CSV
