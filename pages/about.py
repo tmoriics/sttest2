@@ -61,7 +61,7 @@ def main():
     st.text('(c) 2022 tmoriics')
     
     st.header('About: ')
-    st.subheader('アプリの機能：')
+    st.subheader('アプリの機能')
     st.text('排尿日誌の認識とそれに基づく指標演算を行います。')
     
     
