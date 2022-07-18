@@ -8,7 +8,8 @@
 ##### 2022-07-15T14:30
 ##### 2022-07-15T21:00
 ##### 2022-07-17T07:00
-#####
+##### 2022-07-17T23:00
+##### 2022-07-18T07:00
 #####
 
 ###
@@ -503,12 +504,13 @@ with rd_e.container():
                 after_midnight = True
                 # 24, 25時以降にhourをいじり, datetimeをつくる
                 # print("First after midnight")
+                #
+                # rowhour = rowhour + 24
+                # rowdatetime = rowdatetime_tmp + datetime.timedelta(hours=24)
                 urination_data_df.at[index,
                                      'hour'] = urination_data_df.at[index, 'hour'] + 24
                 urination_data_df.at[index, 'datetime'] = urination_data_df.at[index,
                                                                                'datetime_tmp'] + datetime.timedelta(hours=24)
-                # rowhour = rowhour + 24
-                # rowdatetime = rowdatetime_tmp + datetime.timedelta(hours=24)
         elif after_midnight == True:
             # 24, 25時以降ということであるので，hourをいじり, datetimeをつくる
             # print("Second or later after midnight")
@@ -529,11 +531,34 @@ with rd_e.container():
     urination_data_df['time_difference'] = urination_data_df['datetime'].diff()
     urination_data_df['time_difference'] = urination_data_df['time_difference'].dt.total_seconds() / 60.0
     #
+    # Time phase
+    first_after_wakeup_found = False
+    first_after_next_wakeup_found = False
+    urination_data_df['time_phase'] = urination_data_df['datetime']
+    for index, row in urination_data_df.iterrows():
+        if row['datetime'] < wakeup_datetime:
+            urination_data_df.at[index,'time_phase'] = 'before_wakeup'
+        elif row['datetime'] <  bed_datetime:
+            if first_after_wakeup_found == False:
+                first_after_wakeup_found = True
+                urination_data_df.at[index,'time_phase'] = 'first_after_wakeup'
+            else:
+                urination_data_df.at[index,'time_phase'] = 'day_time'
+        elif row['datetime'] <  next_wakeup_datetime:
+            urination_data_df.at[index,'time_phase'] = 'after_bed'
+        else: 
+            if first_after_next_wakeup_found == False:
+                first_after_next_wakeup_found = True
+                urination_data_df.at[index,'time_phase'] = 'first_after_next_wakeup'
+            else: 
+                urination_data_df.at[index,'time_phase'] = 'next_day_time'
+    ########## for check
+    print(urination_data_df)            
+    #
     # Drop some temporal English name columns
     urination_data_df.drop(columns=['datetime_tmp', 'datetime_tmp_before', 'datetime_tmp_after_check'], inplace=True)
     ########## for check
     # st.write(urination_data_df)
-
 
     ###
     ### Downloadable recognized document (=data)
@@ -612,18 +637,22 @@ with wb_e.container():
 ind_e = lcol2.empty()
 with ind_e.container():
     st.markdown('### 排尿関連指標：')
-    number_of_urination = 8
+    number_of_urination = 8-1
     number_of_urinary_tracts = 0
-    number_of_daytime_urination = 5
+    number_of_daytime_urination = 5-1
     number_of_nocturnal_urination = 2+1
-    daytime_urination_volume = (100+250+300+225+125)
+    daytime_urination_volume = (250+300+225+125)
     nocturnal_urination_volume = (100+150+200)
-    urination_volume = urination_data_df.sum(numeric_only=True).micturition
-    urination_volume_per_cycle = urination_data_df.mean(numeric_only=True).micturition
+    # urination_volume = urination_data_df.sum(numeric_only=True).micturition
+    urination_volume = 1350
+    # urination_volume_per_cycle = urination_data_df.mean(numeric_only=True).micturition
+    urination_volume_per_cycle = 1350/7
     urinary_tract_volume = 0
     urinary_tract_volume_per_cycle = 0
-    minimum_single_urination_volume = urination_data_df.min(numeric_only=True).micturition
-    maximum_single_urination_volume = urination_data_df.max(numeric_only=True).micturition
+    # minimum_single_urination_volume = urination_data_df.min(numeric_only=True).micturition
+    minimum_single_urination_volume = 100
+    # maximum_single_urination_volume = urination_data_df.max(numeric_only=True).micturition
+    maximum_single_urination_volume = 300
     minimum_single_urinary_tract_volume = 0
     maximum_single_urinary_tract_volume = 0
     average_urination_interval = urination_data_df.mean(numeric_only=True).time_difference
