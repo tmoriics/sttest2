@@ -12,6 +12,7 @@
 # 2022-07-17T23:00
 # 2022-07-18T07:00
 # 2022-07-18T23:18
+# 2022-07-19T15:49 Trying session state
 # 
 #####
 
@@ -51,6 +52,11 @@ import streamlit as st
 # Locale
 ###
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+
+###
+# Timezone
+###
+tz_jst = datetime.timezone(datetime.timedelta(hours=9))
 
 
 #####
@@ -163,7 +169,7 @@ lcol1, rcol1 = st.columns(2)
 ###
 # Today set
 ###
-dt_now = datetime.datetime.now()
+dt_now = datetime.datetime.now(tz_jst)
 rcol1.text('現在の日時：'+dt_now.strftime('%Y年%m月%d日 %H:%M:%S'+'です。'))
 
 
@@ -210,7 +216,7 @@ lcol1.info('日誌対象者IDは'+str(diary_id)+'です。')
 # diary_day_string = '1'
 # ##### diary_date = datetime.date.fromisoformat(diary_date_string)
 # diary_date = datetime.date(year=int(diary_year_string),
-#                          month=int(diary_month_string), day=int(diary_day_string))
+#                          month=int(diary_month_string), day=int(diary_day_string),tzinfo=tz_jst))
 di_e = lcol1.empty()
 with di_e.container():
     diary_date = st.date_input("日誌の日付を西暦で入力してください。",
@@ -218,8 +224,10 @@ with di_e.container():
     if diary_date == (dt_now+datetime.timedelta(days=3)).date():
         st.warning('日付の入力を御願いします。')
         st.stop()
+        
     st.success('入力が確認できました。'+diary_date.strftime('%Y年%m月%d日'))
     # time.sleep(2)
+
 di_e.empty()
 lcol1.info('日誌対象日は'+diary_date.strftime('%Y年%m月%d日'+'です。'))
 
@@ -235,7 +243,11 @@ lcol1.info('日誌対象日は'+diary_date.strftime('%Y年%m月%d日'+'です。
 #
 # Wakeup and bed set
 def calculate_datetime_from_date_and_time_strings(date_dt, hour_s, minute_s, pm_adjust_b):
-    time_tmp = datetime.time(hour=int(hour_s), minute=int(minute_s))
+#   time_tmp = datetime.time(hour=int(hour_s), minute=int(minute_s))
+    time_tmp = datetime.time(hour=int(hour_s), minute=int(minute_s), tzinfo=tz_jst)
+    # print(time_tmp)
+    # print(type(time_tmp))
+    # print(time_tmp.tzinfo)
     if pm_adjust_b:
         ret = datetime.datetime.combine(
             date_dt, time_tmp) + datetime.timedelta(hours=12)
@@ -245,7 +257,7 @@ def calculate_datetime_from_date_and_time_strings(date_dt, hour_s, minute_s, pm_
 
 
 # wakeup_time_tmp = datetime.time(
-#     hour=int(wakeup_hour_string), minute=int(wakeup_minute_string))
+#     hour=int(wakeup_hour_string), minute=int(wakeup_minute_string),tzinfo=tz_jst))
 # if wakeup_pm_adjust_boolean:
 #     wakeup_datetime = datetime.datetime.combine(
 #         diary_date, wakeup_time_tmp) + datetime.timedelta(hours=12)
@@ -472,9 +484,11 @@ with rd_e.container():
     urination_data_df['remaining'] = [True if b ==
                                       '有' else False for b in urination_data_df['残尿感']]
     urination_data_df['memo'] = urination_data_df['メモ']
+    print(urination_data_df[['year', 'month', 'day', 'hour', 'minute']])
     urination_data_df['datetime_tmp'] = pd.to_datetime(
-        urination_data_df[['year', 'month', 'day', 'hour', 'minute']])
-    #    urination_data_df[['year', 'month', 'day', 'hour', 'minute']], errors='coerce')
+        urination_data_df[['year', 'month', 'day', 'hour', 'minute']]).dt.tz_localize('Asia/Tokyo')
+    #####    urination_data_df[['year', 'month', 'day', 'hour', 'minute']], errors='coerce')
+    print(urination_data_df['datetime_tmp'])
     urination_data_df['datetime_tmp_before'] = urination_data_df['datetime_tmp'].shift(
         1)
     urination_data_df['datetime_tmp_after_check'] = urination_data_df['datetime_tmp'] > urination_data_df['datetime_tmp_before']
@@ -482,9 +496,11 @@ with rd_e.container():
     # print(urination_data_df['datetime_tmp_after_check'])
 
     #
+    # COPY
+    urination_data_df['datetime'] = urination_data_df['datetime_tmp']
+    #
     # After midnight adjustment
     after_midnight = False
-    urination_data_df['datetime'] = urination_data_df['datetime_tmp']
     for index, row in urination_data_df.iterrows():
         if (after_midnight == False) and (row['datetime_tmp_after_check'] == False):
             if index == 0:
@@ -495,15 +511,15 @@ with rd_e.container():
                                          'hour'] = urination_data_df.at[index, 'hour'] + 24
                     urination_data_df.at[index, 'datetime'] = urination_data_df.at[index,
                                                                                    'datetime_tmp'] + datetime.timedelta(hours=24)
-                    # print("Line 0 and the first after midnight")
+                    print("Line 0 and the first after midnight")
                 else:
-                    # print("Line 0")
+                    print("Line 0")
                     urination_data_df.at[index,
                                          'datetime'] = urination_data_df.at[index, 'datetime_tmp']
             else:
                 after_midnight = True
                 # 24, 25時以降にhourをいじり, datetimeをつくる
-                # print("First after midnight")
+                print("First after midnight")
                 #
                 # rowhour = rowhour + 24
                 # rowdatetime = rowdatetime_tmp + datetime.timedelta(hours=24)
@@ -513,7 +529,7 @@ with rd_e.container():
                                                                                'datetime_tmp'] + datetime.timedelta(hours=24)
         elif after_midnight == True:
             # 24, 25時以降ということであるので，hourをいじり, datetimeをつくる
-            # print("Second or later after midnight")
+            print("Second or later after midnight")
             urination_data_df.at[index,
                                  'hour'] = urination_data_df.at[index, 'hour'] + 24
             urination_data_df.at[index, 'datetime'] = urination_data_df.at[index,
@@ -521,7 +537,7 @@ with rd_e.container():
             # rowhour = rowhour + 24
             # rowdatetime = rowdatetime_tmp + datetime.timedelta(hours=24)
         else:
-            # print("Before midnight")
+            print("Before midnight")
             urination_data_df.at[index,
                                  'datetime'] = urination_data_df.at[index, 'datetime_tmp']
     # for check
@@ -608,16 +624,17 @@ md_e = st.empty()
 with md_e.container():
     st.header("当該日の尿量・漏れ量グラフ")
     vol_df = urination_data_df[['datetime', 'micturition', 'leakage']]
-    vol_df['datetime_Japan'] = urination_data_df['datetime'].dt.tz_localize(
-        'Asia/Tokyo')
-    vol_df.drop(columns='datetime', inplace=True)
-    chart_df = pd.melt(vol_df, id_vars=['datetime_Japan'],
+    ### localize way
+    ### vol_df['datetime_Japan'] = urination_data_df['datetime'].dt.tz_localize(
+    ###    'Asia/Tokyo')
+    ### vol_df.drop(columns='datetime', inplace=True)
+    ## chart_df = pd.melt(vol_df, id_vars=['datetime_Japan'],
+    ##                     var_name='parameter', value_name='value')
+    ## chart_base = alt.Chart(chart_df).encode(x='datetime_Japan', y='value', color='parameter')
+    ### utc way
+    chart_df = pd.melt(vol_df, id_vars=['datetime'],
                        var_name='parameter', value_name='value')
-    # chart = alt.Chart(chart_df, background=graph_background_color,
-    #                  title='Volume and leak').mark_line().encode(x='datetime_Japan',
-    #                                                              y='value', color='parameter')
-    # st.altair_chart(chart, use_container_width=True)
-    chart_base = alt.Chart(chart_df).encode(x='datetime_Japan', y='value', color='parameter')
+    chart_base = alt.Chart(chart_df).encode(x='datetime', y='value', color='parameter')
     chart_layer = alt.layer(chart_base.mark_line(), chart_base.mark_point(), background=graph_background_color, title='Volume and leak')
     st.altair_chart(chart_layer, use_container_width=True)
 #   st.write(pd.DataFrame(vol_df))
