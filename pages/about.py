@@ -8,10 +8,7 @@
 ### 
 # Imports
 ###
-import datetime
 import time
-from urllib.request import Request, urlopen
-import pandas as pd
 from PIL import Image
 import streamlit as st
 

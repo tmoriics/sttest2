@@ -35,7 +35,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from PIL import Image
-import cv2
+# import cv2
 import altair as alt
 import streamlit as st
 # from pdf2image import convert_from_path
