@@ -44,7 +44,7 @@ import streamlit as st
 import plotly.express as px
 from st_aggrid import AgGrid
 from st_aggrid.grid_options_builder import GridOptionsBuilder
-from st_aggrid.shared import GridUpdateMode
+from st_aggrid.shared import GridUpdateMode, JsCode
 
 #####
 #####
@@ -186,7 +186,7 @@ def main():
 
 
     ###
-    ### Aggrid
+    ### Preparation of place holoder For Aggrid 
     ###
     ud_e = st.empty()
 
@@ -595,21 +595,51 @@ def main():
                     first_after_bed_found = True
                     first_after_bed_datetime = row['datetime']
         # for check
-        print(urination_data_df)
+        # print(urination_data_df)
         #
         # Drop some temporal English name columns
         urination_data_df.drop(columns=[
                                'datetime_tmp', 'datetime_tmp_before', 'datetime_tmp_after_check'], inplace=True)
         # for check
         # st.write(urination_data_df)
+
+        #
+        # Aggrid
+        cellstyle_jscode = JsCode(
+            """
+        function(params) {
+            if (params.value.includes('day_time')) {
+                return {
+                    'color': 'white',
+                    'backgroundColor': 'darkred'
+                }
+            } else {
+                return {
+                    'color': 'black',
+                    'backgroundColor': 'white'
+                }
+            }
+        };
+        """
+        )
         urination_data_gb = GridOptionsBuilder.from_dataframe(urination_data_df)
         urination_data_gb.configure_selection(selection_mode="multiple", use_checkbox=True)
+        urination_data_gb.configure_pagination()
+        urination_data_gb.configure_side_bar()
+        urination_data_gb.configure_default_column(groupable=True, value=True, enableRowGroup=True,
+                                                   aggFunc="sum", editable=True)
+        urination_data_gb.configure_column("time_phase", cellStyle=cellstyle_jscode)
         urination_data_gridOptions = urination_data_gb.build()
-        urination_data_gd = AgGrid(urination_data_df,
-                                      gridOptions=urination_data_gridOptions,
-                                      enable_enterprise_modules=True,
-                                      allow_unsafe_jscode=True,
-                                      update_mode=GridUpdateMode.SELECTION_CHANGED)
+        urination_data_gd = AgGrid(urination_data_df, theme='blue',
+                                   gridOptions=urination_data_gridOptions,
+                                   enable_enterprise_modules=True,
+                                   allow_unsafe_jscode=True,
+                                   update_mode=GridUpdateMode.SELECTION_CHANGED)
+        #
+        # Create edited data frame of urination data
+        urination_data_gd_df = urination_data_gd['data']
+        # for check
+        #print(urination_data_gd_df)
         with ud_e.container():
             # st.write(urination_data_gd["selected_rows"])
             selected_rows_gd = urination_data_gd["selected_rows"]
