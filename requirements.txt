@@ -8,3 +8,5 @@ xlrd
 openpyxl
 streamlit
 requests
+streamlit-aggrid
+
