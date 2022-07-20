@@ -12,7 +12,8 @@
 # 2022-07-17T23:00
 # 2022-07-18T07:00
 # 2022-07-18T23:18
-# 2022-07-19T15:49 Trying session state still
+# 2022-07-19T15:49 
+# 2022-07-20T22:00 Trying session state still after adding aggrid
 # 
 #####
 
@@ -40,7 +41,10 @@ from PIL import Image
 import altair as alt
 import streamlit as st
 # from pdf2image import convert_from_path
-
+import plotly.express as px
+from st_aggrid import AgGrid
+from st_aggrid.grid_options_builder import GridOptionsBuilder
+from st_aggrid.shared import GridUpdateMode
 
 #####
 #####
@@ -180,6 +184,12 @@ def main():
     # # # graph_background_color = st.sidebar.color_picker('Graph background color', value='#EEFFEE')
     display_recognized_image = st.sidebar.checkbox('Display recognized image(s)')
 
+
+    ###
+    ### Aggrid
+    ###
+    ud_e = st.empty()
+
     
     ###
     # Column 1 start
@@ -197,15 +207,15 @@ def main():
     ###
     # Check point by streamlit secrets management function
     ###
-    cp_e = st.empty()
-    with cp_e.container():
-        guess = st.text_input("What is the password?")
-        if guess != st.secrets["password"]:
-            st.warning("Please input the password.")
-            st.stop()
-        st.success('Thank you for inputting the password.')
-        # time.sleep(1)
-    cp_e.empty()
+#     cp_e = st.empty()
+#     with cp_e.container():
+#         guess = st.text_input("What is the password?")
+#         if guess != st.secrets["password"]:
+#             st.warning("Please input the password.")
+#             st.stop()
+#         st.success('Thank you for inputting the password.')
+#         # time.sleep(1)
+#     cp_e.empty()
     
     
     ###
@@ -592,6 +602,21 @@ def main():
                                'datetime_tmp', 'datetime_tmp_before', 'datetime_tmp_after_check'], inplace=True)
         # for check
         # st.write(urination_data_df)
+        urination_data_gb = GridOptionsBuilder.from_dataframe(urination_data_df)
+        urination_data_gb.configure_selection(selection_mode="multiple", use_checkbox=True)
+        urination_data_gridOptions = urination_data_gb.build()
+        urination_data_gd = AgGrid(urination_data_df,
+                                      gridOptions=urination_data_gridOptions,
+                                      enable_enterprise_modules=True,
+                                      allow_unsafe_jscode=True,
+                                      update_mode=GridUpdateMode.SELECTION_CHANGED)
+        with ud_e.container():
+            # st.write(urination_data_gd["selected_rows"])
+            selected_rows_gd = urination_data_gd["selected_rows"]
+            selected_rows = pd.DataFrame(selected_rows_gd)
+            if len(selected_rows) != 0:
+                fig_gd = px.bar(selected_rows, "time_phase", color="no_leakage")
+                st.plotly_chart(fig_gd)
     
         ###
         # Downloadable recognized document (=data)
