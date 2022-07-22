@@ -56,13 +56,33 @@ from st_aggrid.shared import GridUpdateMode, JsCode
 ###
 # Locale
 ###
-locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+# locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+locale.setlocale(locale.LC_ALL, 'ja_JP.UTF-8')
 
 ###
 # Timezone
 ###
 tz_jst = datetime.timezone(datetime.timedelta(hours=9))
 
+
+###
+# Global
+###
+# df_today = df_today.rename({"Hokkaido":"北海道", "Aomori":"青森","Akita":"秋田",
+#       "Iwate":"岩手", "Miyagi":"宮城","Yamagata":"山形", "Fukushima":"福島", 
+#       "Ibaraki":"茨城", "Tochigi":"栃木", "Gunma":"群馬", "Saitama":"埼玉",
+#       "Chiba":"千葉", "Tokyo":"東京", "Kanagawa":"神奈川",
+#       "Niigata":"新潟", "Toyama":"富山", "Ishikawa":"石川",
+#       "Fukui":"福井", "Yamanashi":"山梨", "Nagano":"長野", 
+#       "Gifu":"岐阜","Shizuoka":"静岡", "Aichi":"愛知", "Mie":"三重",
+#       "Shiga":"滋賀", "Kyoto":"京都", "Osaka":"大阪","Hyogo":"兵庫",
+#       "Nara":"奈良", "Wakayama":"和歌山", 
+#       "Tottori":"鳥取","Shimane":"島根", "Okayama":"岡山",
+#       "Hiroshima":"広島", "Yamaguchi":"山口",
+#       "Kagawa":"香川", "Tokushima":"徳島","Ehime":"愛媛", "Kochi":"高知", 
+#       "Fukuoka":"福岡", "Saga":"佐賀", "Nagasaki":"長崎",
+#       "Kumamoto":"熊本", "Oita":"大分", "Miyazaki":"宮崎",
+#       "Kagoshima":"鹿児島", "Okinawa":"沖縄"})
 
 #####
 #####
@@ -673,10 +693,12 @@ def main():
         ###
         #
         # Downloadable editable document preparation Type B 
-        ud_df2_tmp = urination_data_df.drop(columns=['時', '分','排尿量', 'もれ', '尿意', '切迫感', '残尿感', 'メモ', 
+        ud_df2_tmp = urination_data_df.drop(columns=['時', '分',
+                                                     '排尿量', 'もれ',
+                                                     '尿意', '切迫感', '残尿感', 'メモ', 
                                                      'year', 'month', 'day',
                                                      'hour', 'minute',
-                                                     'time_difference', 'time_phase'])
+                                                     'time_difference'])
         
         #
         # Downloadable editable document display Type B by Aggrid
@@ -706,6 +728,8 @@ def main():
 #                                                  aggFunc="sum", editable=True)
         urination_data_gb.configure_default_column(groupable=True, editable=True)
         urination_data_gb.configure_column("time_phase", cellStyle=cellstyle_jscode)
+        urination_data_gb.configure_column("datetime", type=["customeDateTimeFormat"],
+                                           custom_format_string='yyyy-MM-dd HH:mm zzz')
         urination_data_gridOptions = urination_data_gb.build()
         ud_gd = AgGrid(ud_df2_tmp, theme='blue',
                        gridOptions=urination_data_gridOptions,

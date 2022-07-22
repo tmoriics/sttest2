@@ -4,9 +4,11 @@ pandas
 Pillow==9.0.1
 seaborn
 altair
-opencv-python--headless
 xlrd
 openpyxl
 streamlit
 requests
+plotly
 streamlit-aggrid
+opencv-python--headless
+japanmap
