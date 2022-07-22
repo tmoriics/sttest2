@@ -56,8 +56,8 @@ from st_aggrid.shared import GridUpdateMode, JsCode
 ###
 # Locale
 ###
-# locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-locale.setlocale(locale.LC_ALL, 'ja_JP.UTF-8')
+locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+# locale.setlocale(locale.LC_ALL, 'ja_JP.UTF-8')
 
 ###
 # Timezone
