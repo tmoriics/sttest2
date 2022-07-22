@@ -13,7 +13,8 @@
 # 2022-07-18T07:00
 # 2022-07-18T23:18
 # 2022-07-19T15:49 
-# 2022-07-20T22:00 Trying session state still after adding aggrid
+# 2022-07-20T22:00
+# 2022-07-22T12:00 Trying session state still after adding aggrid and credentials.toml
 # 
 #####
 
@@ -21,6 +22,8 @@
 ###
 # Imports
 ###
+import sys
+import traceback
 import math
 import locale
 import datetime
@@ -70,6 +73,24 @@ tz_jst = datetime.timezone(datetime.timedelta(hours=9))
 #####
 
 ###
+###
+###
+@st.experimental_memo
+def convert_df_to_csv(df):
+    return df.to_csv().encode('utf-8-sig')
+
+
+###
+###
+###
+# @st.experimental_memo(suppress_st_warning=True)
+def upload_pdf_file_func():
+    #    uploaded_file = st.file_uploader("Choose a diary image of the day",
+    uploaded_pdffile = st.file_uploader("日誌の画像PDFファイルを選んでください。",
+                                        accept_multiple_files=False)
+    return uploaded_pdffile
+
+###
 # PDF
 ###
 # def show_pdf(file_path:str):
@@ -87,24 +108,6 @@ tz_jst = datetime.timezone(datetime.timedelta(hours=9))
 #     pdf_display = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height="1000" type="application/pdf">'
 #     st.markdown(pdf_display, unsafe_allow_html=True)
 #
-
-###
-###
-###
-@st.experimental_memo
-def convert_df_to_csv(df):
-    return df.to_csv().encode('utf-8-sig')
-
-
-###
-###
-###
-# @st.experimental_memo(suppress_st_warning=True)
-def upload_pdf_file_func():
-    #    uploaded_file = st.file_uploader("Choose a diary image of the day",
-    uploaded_pdffile = st.file_uploader("日誌の画像PDFファイルを選んでください。",
-                                        accept_multiple_files=False)
-    return uploaded_pdffile
 
 
 ###
@@ -156,7 +159,7 @@ def calculate_datetime_from_date_and_time_strings(date_dt, hour_s, minute_s, pm_
 #####
 
 def main():
-    
+  try:    
     ###
     # Title display
     ###
@@ -169,7 +172,7 @@ def main():
       """
     st.markdown(hide_menu_style, unsafe_allow_html=True)
     st.title('排尿日誌マネージャー（産褥期）')
-    st.text('Copyright (c) 2022 tmoriics (2022-07-17T20:41)')
+    st.text('Copyright (c) 2022 tmoriics (2022-07-20T22:00)')
 
 
     ###
@@ -501,7 +504,8 @@ def main():
         urination_data_df['remaining'] = [True if b ==
                                           '有' else False for b in urination_data_df['残尿感']]
         urination_data_df['memo'] = urination_data_df['メモ']
-        print(urination_data_df[['year', 'month', 'day', 'hour', 'minute']])
+        # for check
+        # print(urination_data_df[['year', 'month', 'day', 'hour', 'minute']])
         urination_data_df['datetime_tmp'] = pd.to_datetime(
             urination_data_df[['year', 'month', 'day', 'hour', 'minute']]).dt.tz_localize('Asia/Tokyo')
         #####    urination_data_df[['year', 'month', 'day', 'hour', 'minute']], errors='coerce')
@@ -517,6 +521,7 @@ def main():
         #
         # After midnight adjustment
         after_midnight = False
+        after_midnight_state = ''
         for index, row in urination_data_df.iterrows():
             if (after_midnight == False) and (row['datetime_tmp_after_check'] == False):
                 if index == 0:
@@ -527,15 +532,15 @@ def main():
                                              'hour'] = urination_data_df.at[index, 'hour'] + 24
                         urination_data_df.at[index, 'datetime'] = urination_data_df.at[index,
                                                                                        'datetime_tmp'] + datetime.timedelta(hours=24)
-                        print("Line 0 and the first after midnight")
+                        after_midnight_state = "Line 0 and the first after midnight"
                     else:
-                        print("Line 0")
+                        after_midnight_state = "Line 0"
                         urination_data_df.at[index,
                                              'datetime'] = urination_data_df.at[index, 'datetime_tmp']
                 else:
                     after_midnight = True
                     # 24, 25時以降にhourをいじり, datetimeをつくる
-                    print("First after midnight")
+                    after_midnight_state = "First after midnight"
                     #
                     # rowhour = rowhour + 24
                     # rowdatetime = rowdatetime_tmp + datetime.timedelta(hours=24)
@@ -545,7 +550,7 @@ def main():
                                                                                    'datetime_tmp'] + datetime.timedelta(hours=24)
             elif after_midnight == True:
                 # 24, 25時以降ということであるので，hourをいじり, datetimeをつくる
-                print("Second or later after midnight")
+                after_midnight_state = "Second or later after midnight"
                 urination_data_df.at[index,
                                      'hour'] = urination_data_df.at[index, 'hour'] + 24
                 urination_data_df.at[index, 'datetime'] = urination_data_df.at[index,
@@ -553,9 +558,11 @@ def main():
                 # rowhour = rowhour + 24
                 # rowdatetime = rowdatetime_tmp + datetime.timedelta(hours=24)
             else:
-                print("Before midnight")
+                after_midnight_state = "Before midnight"
                 urination_data_df.at[index,
                                      'datetime'] = urination_data_df.at[index, 'datetime_tmp']
+            # for check
+            print(after_midnight_state)
         # for check
         # print(urination_data_df[['datetime', 'datetime_tmp_after_check', 'day', 'hour']])
         #
@@ -873,6 +880,12 @@ def main():
     #
     # st.button("Re-run")
 
+  except Exception:
+    print("Exception from app. ")
+    print("-"*60)
+    traceback.print_exc(file=sys.stdout)
+    print("-"*60)
+          
     
 ###
 ###
