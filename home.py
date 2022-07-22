@@ -419,7 +419,7 @@ def main():
                 ocr_urination_data_df = pd.read_csv("data/urination_data_sample1.csv")
             else:
                 st.write('このような日誌画像を縦長で撮影してください。')
-                st.image(form1_sample1_image, caption='日誌画像例', width=240)
+                st.image(form1_sample1_image, caption='日誌画像例', width=256)
                 st.stop()
     # ei.empty()
     # if st.button("アップロードのやり直し"):
@@ -564,9 +564,10 @@ def main():
             after_midnight_state = "Before midnight"
             urination_data_df.at[index,
                                  'datetime'] = urination_data_df.at[index, 'datetime_tmp']
+        # for check
+        print(after_midnight_state)
     # for check
-    print(after_midnight_state)
-    # print(urination_data_df[['datetime', 'datetime_tmp_after_check', 'day', 'hour']])
+    print(urination_data_df[['datetime', 'datetime_tmp_after_check', 'day', 'hour']])
     
     #
     # Calculate time difference
@@ -598,9 +599,9 @@ def main():
                 urination_data_df.at[index, 'time_phase'] = 'first_after_next_wakeup'
             else:
                 urination_data_df.at[index, 'time_phase'] = 'next_day_time'
-                first_after_bed_found = False
     #
-    #  first after bed datetime
+    #  first after bed datetime for FIST SLEEP CALCULATION
+    first_after_bed_found = False
     for index, row in urination_data_df.iterrows():
         if row['datetime'] >= bed_datetime:
             if first_after_bed_found == False:
@@ -623,6 +624,7 @@ def main():
         #
         # Recognized diary document display
         st.header("日誌データ（認識結果）")
+        st.subheader("テーブル（認識結果）")
         #
         # Recognized image(s) display
         if display_recognized_image:
@@ -630,6 +632,10 @@ def main():
                 resimg = Image.open(
                     'images/diary_form1_sample1_virtually_recognized.png')
                 st.image(resimg, caption='認識された日誌画像', width=240)
+            elif ri == '画像ファイル(PDF)':
+                resimg = Image.open(
+                    'images/diary_form1_sample1_virtually_recognized.png')
+                st.image(resimg, caption='認識された日誌画像', width=120)
             elif ri == 'カメラ撮影':
                 resimg = Image.open(
                     'images/diary_form1_sample1_virtually_recognized.png')
@@ -642,29 +648,39 @@ def main():
         ###
         #
         # Downloadable recognized document preparation Type A
-        ud_df1 = urination_data_df.drop(columns=['時', '分', 'year', 'month', 'day',
-                                                 'hour', 'minute',
-                                                 'micturition',
-                                                 'leakage', 'desire', 'urgency', 'remaining',
-                                                 'memo'])
-        ud_df = ud_df1.dropna(subset=['datetime'])
+        ud_df1_tmp = urination_data_df.drop(columns=['時', '分',
+                                                     'year', 'month', 'day',
+                                                     'hour', 'minute',
+                                                     'micturition',
+                                                     'leakage', 'desire', 'urgency', 'remaining',
+                                                     'memo'])
+        ud_df1 = ud_df1_tmp.dropna(subset=['datetime'])
         #
         # Downloadable recognized document display Type A by st.table
-        st.table(ud_df.style.highlight_max(axis=0))
+        st.table(ud_df1.style.highlight_max(axis=0))
         #
         # Downloadable recognized document CSV (=data CSV)
-        ud_csv = convert_df_to_csv(ud_df)
-        ud_csv_fn = "ud_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
-        st.subheader("日誌データ（認識結果）のCSV形式でのダウンロード")
+        ud_df1_csv = convert_df_to_csv(ud_df1)
+        ud_df1_csv_fn = "ud_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
+        # st.subheader("日誌データ（認識結果）のCSV形式でのダウンロード")
         st.download_button(label="Download recognized data as CSV",
-                           data=ud_csv,
-                           file_name=ud_csv_fn,
+                           data=ud_df1_csv,
+                           file_name=ud_df1_csv_fn,
                            mime='text/csv')
                 
         ###
         # Downloadable editable document (=data) Type B
         ###
+        #
+        # Downloadable editable document preparation Type B 
+        ud_df2_tmp = urination_data_df.drop(columns=['時', '分','排尿量', 'もれ', '尿意', '切迫感', '残尿感', 'メモ', 
+                                                     'year', 'month', 'day',
+                                                     'hour', 'minute',
+                                                     'time_difference', 'time_phase'])
+        
+        #
         # Downloadable editable document display Type B by Aggrid
+        st.subheader("テーブル（編集用）")
         cellstyle_jscode = JsCode(
             """
         function(params) {
@@ -682,7 +698,7 @@ def main():
         };
         """
         )
-        urination_data_gb = GridOptionsBuilder.from_dataframe(urination_data_df)
+        urination_data_gb = GridOptionsBuilder.from_dataframe(ud_df2_tmp)
         urination_data_gb.configure_selection(selection_mode="multiple", use_checkbox=True)
         urination_data_gb.configure_pagination()
         urination_data_gb.configure_side_bar()
@@ -691,30 +707,28 @@ def main():
         urination_data_gb.configure_default_column(groupable=True, editable=True)
         urination_data_gb.configure_column("time_phase", cellStyle=cellstyle_jscode)
         urination_data_gridOptions = urination_data_gb.build()
-        urination_data_gd = AgGrid(urination_data_df, theme='blue',
-                                   gridOptions=urination_data_gridOptions,
-                                   # enable_enterprise_modules=True,
-                                   allow_unsafe_jscode=True,
-                                   update_mode=GridUpdateMode.SELECTION_CHANGED | GridUpdateMode.VALUE_CHANGED,)
+        ud_gd = AgGrid(ud_df2_tmp, theme='blue',
+                       gridOptions=urination_data_gridOptions,
+                       # enable_enterprise_modules=True,
+                       allow_unsafe_jscode=True,
+                       update_mode=GridUpdateMode.SELECTION_CHANGED | GridUpdateMode.VALUE_CHANGED,)
         #
         # Downloadable edited document preparation Type B
-        urination_data_gd_df = urination_data_gd['data']
+        ud_df2 = ud_gd['data']
         # Downloadable edited document Type B 
-        ud_gd_csv = convert_df_to_csv(urination_data_gd_df)
-        ud_gd_csv_fn = "gd_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
-        st.subheader("日誌データ（編集後）のCSV形式でのダウンロード")
+        ud_df2_csv = convert_df_to_csv(ud_df2)
+        ud_df2_csv_fn = "gd_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
+        # st.subheader("日誌データ（編集後）のCSV形式でのダウンロード")
         st.download_button(label="Download edited data as CSV",
-                           data=ud_gd_csv,
-                           file_name=ud_gd_csv_fn,
+                           data=ud_df2_csv,
+                           file_name=ud_df2_csv_fn,
                            mime='text/csv')
-        # for check
-        #print(urination_data_gd_df)
 
         #
         # plotly graph
         with ud_e.container():
             # st.write(urination_data_gd["selected_rows"])
-            selected_rows_gd = urination_data_gd["selected_rows"]
+            selected_rows_gd = ud_gd["selected_rows"]
             selected_rows = pd.DataFrame(selected_rows_gd)
             if len(selected_rows) != 0:
                 fig_gd = px.bar(selected_rows, "time_phase", color="no_leakage")
