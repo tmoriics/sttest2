@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-
-#####
+#######
 # home.py
-#####
-# 7/17 WIP cacheが働かない。memo機能も試したが十分早いのでUploadのCacheは使わないでしばらくいく。
+#######
 # 2022-07-15T06:00
 # 2022-07-15T09:30
 # 2022-07-15T14:30
@@ -15,8 +13,7 @@
 # 2022-07-19T15:49 
 # 2022-07-20T22:00
 # 2022-07-22T12:00 Trying session state still after adding aggrid and credentials.toml
-# 
-#####
+#     7/17 WIP cacheが働かない。memo機能も試したが十分早いのでUploadのCacheは使わないでしばらくいく。
 
 
 ###
@@ -40,18 +37,19 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from PIL import Image
-# import cv2
 import altair as alt
 import streamlit as st
-# from pdf2image import convert_from_path
 import plotly.express as px
 from st_aggrid import AgGrid
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 from st_aggrid.shared import GridUpdateMode, JsCode
+# import cv2
+# from pdf2image import convert_from_path
+
 
 #####
 #####
-# Locale and others
+# Locale, timezone and others
 #####
 #####
 
@@ -73,25 +71,34 @@ tz_jst = datetime.timezone(datetime.timedelta(hours=9))
 #####
 
 ###
+### Convert a DataFrame to CSV with utf-8-sig
 ###
-###
-@st.experimental_memo
+@st.experimental_memo 
 def convert_df_to_csv(df):
-    return df.to_csv().encode('utf-8-sig')
+    df_to_cfv = df.to_csv().encode('utf-8-sig')
+    return df_to_cfv
 
 
 ###
+### Load a single XLSX file
 ###
+# @st.experimental_memo(suppress_st_warning=True) # これを有効にすると読まなくなる，内部処理されてるのだろうから不要
+def upload_xlsx_file_func():
+    uploaded_xlsxfile = st.file_uploader("日誌のファイル(XLSX)を選んでください。",
+                                          accept_multiple_files=False)
+    return uploaded_xlsxfile
+
+
 ###
-# @st.experimental_memo(suppress_st_warning=True)
+### Load a single PDF file
+###
+# @st.experimental_memo(suppress_st_warning=True) # これを有効にすると読まなくなる，内部処理されてるのだろうから不要
 def upload_pdf_file_func():
-    #    uploaded_file = st.file_uploader("Choose a diary image of the day",
     uploaded_pdffile = st.file_uploader("日誌の画像PDFファイルを選んでください。",
                                         accept_multiple_files=False)
     return uploaded_pdffile
-
 ###
-# PDF
+# Show PDF
 ###
 # def show_pdf(file_path:str):
 #     """Show the PDF in Streamlit
@@ -107,15 +114,13 @@ def upload_pdf_file_func():
 #         base64_pdf = base64.b64encode(f.read()).decode("utf-8")
 #     pdf_display = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height="1000" type="application/pdf">'
 #     st.markdown(pdf_display, unsafe_allow_html=True)
-#
 
 
 ###
+### Load multiple JPG files
 ###
-###
-# @st.experimental_memo(suppress_st_warning=True) # これを有効にすると読んでも[]のままになる。
+# @st.experimental_memo(suppress_st_warning=True) # 内部処理されてるのだろうから不要
 def upload_jpg_files_func():
-    #   uploaded_jpgfiles = st.file_uploader("Choose diary images of the day",
     uploaded_jpgfiles = st.file_uploader("日誌のJPG画像を選んでください。",
                                          accept_multiple_files=True,
                                          type='jpg')
@@ -123,30 +128,38 @@ def upload_jpg_files_func():
 
 
 ###
+### Load single JPG file
 ###
+# @st.experimental_memo(suppress_st_warning=True)  # 内部処理されてるのだろうから不要
+def upload_jpg_file_func():
+    uploaded_jpgfile = st.file_uploader("日誌のJPG画像を選んでください。",
+                                         accept_multiple_files=False,
+                                         type='jpg')
+    return uploaded_jpgfile
+
+
 ###
-# @st.cache(suppress_st_warning=True)
-# @st.experimental_memo(suppress_st_warning=True)
+### Take a photo by user's camera
+###
+# @st.experimental_memo(suppress_st_warning=True) # これを有効にすると読まなくなる，内部処理されてるのだろうから不要
 def take_photo_func():
-    #   image_file_buffer = st.camera_input("Take a snapshot of today's diary")
+    # "Take a snapshot of today's diary"
     image_file_buffer = st.camera_input("日誌画像を撮影してください。")
     return image_file_buffer
 
 
 ###
-###
+### Calculate datetime from the special format date and time
 ###
 #
 # Wakeup and bed set
 def calculate_datetime_from_date_and_time_strings(date_dt, hour_s, minute_s, pm_adjust_b):
-#   time_tmp = datetime.time(hour=int(hour_s), minute=int(minute_s))
+#   time_tmp = datetime.time(hour=int(hour_s), minute=int(minute_s)) # without timezone
     time_tmp = datetime.time(hour=int(hour_s), minute=int(minute_s), tzinfo=tz_jst)
-    # print(time_tmp)
-    # print(type(time_tmp))
-    # print(time_tmp.tzinfo)
+    # for check
+    # print(time_tmp, time_tmp, time_tmp.tzinfo))
     if pm_adjust_b:
-        ret = datetime.datetime.combine(
-            date_dt, time_tmp) + datetime.timedelta(hours=12)
+        ret = datetime.datetime.combine(date_dt, time_tmp) + datetime.timedelta(hours=12)
     else:
         ret = datetime.datetime.combine(date_dt, time_tmp)
     return ret
@@ -157,7 +170,6 @@ def calculate_datetime_from_date_and_time_strings(date_dt, hour_s, minute_s, pm_
 # Main script
 #####
 #####
-
 def main():
   try:    
     ###
@@ -172,8 +184,13 @@ def main():
       """
     st.markdown(hide_menu_style, unsafe_allow_html=True)
     st.title('排尿日誌マネージャー（産褥期）')
-    st.text('Copyright (c) 2022 tmoriics (2022-07-20T22:00)')
+    st.text('Copyright (c) 2022 tmoriics (2022-07-22T16:00)')
 
+    ###
+    # Load heavy things
+    ###
+    form1_sample1_image = Image.open('images/diary_form1_sample1.png')
+    form1_sample1_xlsx_image = Image.open('images/urination_data_sample1.png')
 
     ###
     # Setting by the sidebar
@@ -184,7 +201,7 @@ def main():
     display_recognized_image = False
     #
     # Sidebar display
-    # # # graph_background_color = st.sidebar.color_picker('Graph background color', value='#EEFFEE')
+    # graph_background_color = st.sidebar.color_picker('Graph background color', value='#EEFFEE')
     display_recognized_image = st.sidebar.checkbox('Display recognized image(s)')
 
 
@@ -204,7 +221,7 @@ def main():
     # Today set
     ###
     dt_now = datetime.datetime.now(tz_jst)
-    rcol1.text('現在の日時：'+dt_now.strftime('%Y年%m月%d日 %H:%M:%S'+'です。'))
+    rcol1.markdown('### 現在の日時：'+dt_now.strftime('%Y年%m月%d日 %H:%M'+'です。'))
     
     
     ###
@@ -232,12 +249,10 @@ def main():
             if diary_id <= 1000:
                 st.stop()
             else:
-    
                 st.success('入力が確認できました。' + str(diary_id))
         else:
             st.warning('対象者IDの入力を御願いします。')
             st.stop()
-    
     idi_e.empty()
     lcol1.info('日誌対象者IDは'+str(diary_id)+'です。')
     
@@ -245,12 +260,16 @@ def main():
     ###
     # Diary date input
     ###
+    #
+    # for dummy
     # diary_year_string = '2022'
     # diary_month_string = '5'
     # diary_day_string = '1'
     # ##### diary_date = datetime.date.fromisoformat(diary_date_string)
     # diary_date = datetime.date(year=int(diary_year_string),
     #                          month=int(diary_month_string), day=int(diary_day_string),tzinfo=tz_jst))
+    #
+    # by date_input
     di_e = lcol1.empty()
     with di_e.container():
         diary_date = st.date_input("日誌の日付を西暦で入力してください。",
@@ -258,10 +277,8 @@ def main():
         if diary_date == (dt_now+datetime.timedelta(days=3)).date():
             st.warning('日付の入力を御願いします。')
             st.stop()
-            
         st.success('入力が確認できました。'+diary_date.strftime('%Y年%m月%d日'))
         # time.sleep(2)
-    
     di_e.empty()
     lcol1.info('日誌対象日は'+diary_date.strftime('%Y年%m月%d日'+'です。'))
     
@@ -274,15 +291,8 @@ def main():
     ###
     # Wakeup and bed set
     ###
-    
-    
-    # wakeup_time_tmp = datetime.time(
-    #     hour=int(wakeup_hour_string), minute=int(wakeup_minute_string),tzinfo=tz_jst))
-    # if wakeup_pm_adjust_boolean:
-    #     wakeup_datetime = datetime.datetime.combine(
-    #         diary_date, wakeup_time_tmp) + datetime.timedelta(hours=12)
-    # else:
-    #     wakeup_datetime = datetime.datetime.combine(diary_date, wakeup_time_tmp)
+    #
+    # Wakeup and bedtime default set
     wakeup_hour_string = '6'
     wakeup_minute_string = '00'
     wakeup_pm_adjust_boolean = False
@@ -314,7 +324,7 @@ def main():
     #
     # Wakeup time display
     st.markdown('### 起床時刻：')
-    st.text('対象日の起床時刻は' + wakeup_datetime.strftime("%Y-%m-%dT%H:%M") + 'です．')
+    st.text('対象日の起床時刻は' + wakeup_datetime.strftime("%Y-%m-%dT%H:%M") + 'です。')
     
     
     ###
@@ -323,9 +333,6 @@ def main():
     #
     # Diary image(s) upload
     st.header("日誌画像アップロード")
-    # Image.open('images/samp1.jpg')
-    form1_sample1_image = Image.open('images/diary_form1_sample1.png')
-    form1_sample1_xlsx_image = Image.open('images/urination_data_sample1.png')
     ei = st.empty()
     with ei.container():
         # ri = st.radio("日誌画像をアップロードしてください。スマホカメラでいま撮影しても構いません。",
@@ -333,10 +340,22 @@ def main():
         ri = st.radio("日誌データをアップロードしてください。スマホカメラでいま撮影しても構いません。",
                       ('画像ファイル(JPG)', 'カメラ撮影', 'ファイル(XLSX)'),
                       horizontal=True)
-        # if ri == 'PDFファイル':
+        if ri == 'ファイル(XLSX)':
+            uploaded_xlsx_file = upload_xlsx_file_func()
+            if uploaded_xlsx_file is not None:
+                st.success('日誌データが登録されました。')
+                ocr_urination_data_df = pd.read_excel(uploaded_xlsx_file, sheet_name=0, index_col=None)
+            else:
+                st.write('このような日誌データ（XLSX形式。排尿回数13回以下）をアップロードしてください。')
+                st.image(form1_sample1_xlsx_image, caption='日誌例', width=480)
+                st.stop()
+        # WIP
+        # PDF未対応 pdf2imageがLinuxで使えない。
+        # elif ri == '画像ファイル(PDF)':
         #    uploaded_pdf_file = upload_pdf_file_func()
         #    if uploaded_pdf_file is not None:
-        #        st.success('日誌画像が登録されました．')
+        #        st.success('日誌画像が登録されました。')
+        #        # WIP
         #        # Poppler問題を解決しないといけないさらにPDFから画像複数ページへの変換をしないといけない
         #        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
         #          fp = Path(tmp_file.name)
@@ -345,62 +364,61 @@ def main():
         #          st.image(pimgs, caption='Uploaded image')
         #      FP.CLOSE()すべきかな？
         #    else: 
-        #     st.write('このような日誌画像をアップロードしてください．')
+        #     st.write('このような日誌画像をアップロードしてください。')
         #     st.image(form1_sample1_image, caption='日誌画像例', width=120)
         #     st.stop()
-        if ri == '画像ファイル(JPG)':
-            uploaded_jpg_files = upload_jpg_files_func()
-            if uploaded_jpg_files:
-                st.success('日誌画像が登録されました．')
-                dimgs = []
-                for i, uploaded_jpg_file in enumerate(uploaded_jpg_files):
-                    # 複数枚きたときの扱いはこれでよい。下のdimgに一枚ずつ入っている。
-                    #               bytes_data = uploaded_jpg_file.read()
-                    bytes_data = uploaded_jpg_file.getvalue()
-                    dimgs.append(Image.open(io.BytesIO(bytes_data)))
-                    st.image(dimgs[i], caption='Uploaded jpeg image '+str(i),
-                             use_column_width=True)
-                    st.write("filename: ", uploaded_jpg_file.name)
-                    # WIP dummy data
-                    urination_data_df = pd.read_csv(
-                        "data/urination_data_sample1.csv")
+        # WIP
+        # JPGが複数ページのときに対応しないとならない
+        # elif ri == '画像ファイル(JPG)':
+        #     uploaded_jpg_files = upload_jpg_files_func()
+        #     if uploaded_jpg_files:
+        #         st.success('日誌画像が登録されました。')
+        #         dimgs = []
+        #         for i, uploaded_jpg_file in enumerate(uploaded_jpg_files):
+        #             # 複数枚きたときの扱いはこれでよい。下のdimgに一枚ずつ入っている。
+        #             #               bytes_data = uploaded_jpg_file.read()
+        #             bytes_data = uploaded_jpg_file.getvalue()
+        #             dimgs.append(Image.open(io.BytesIO(bytes_data)))
+        #             st.image(dimgs[i], caption='Uploaded jpeg image '+str(i),
+        #                      use_column_width=True)
+        #             st.write("filename: ", uploaded_jpg_file.name)
+        #             # WIP dummy data
+        #             ocr_urination_data_df = pd.read_csv(
+        #                 "data/urination_data_sample1.csv")
+        elif ri == '画像ファイル(JPG)':
+            uploaded_jpg_file = upload_jpg_file_func()
+            if uploaded_jpg_file is not None:
+                st.success('日誌画像が登録されました。')
+                bytes_data = uploaded_jpg_file.getvalue()
+                dimg = Image.open(io.BytesIO(bytes_data))
+                st.image(dimg, caption='Uploaded jpeg image ', use_column_width=True)
+                st.write("filename: ", uploaded_jpg_file.name)
+                # WIP dummy data
+                ocr_urination_data_df = pd.read_csv("data/urination_data_sample1.csv")
             else:
-                st.write('このような日誌画像(JPG)をアップロードしてください．')
+                st.write('このような日誌画像(JPG)をアップロードしてください。')
                 st.image(form1_sample1_image, caption='日誌画像例', width=240)
                 st.stop()
-        elif ri == 'ファイル(XLSX)':
-            uploaded_xlsx_file = st.file_uploader("日誌のファイル(XLSX)を選んでください。",
-                                                  accept_multiple_files=False)
-            if uploaded_xlsx_file is not None:
-                st.success('日誌データが登録されました。')
-                urination_data_df = pd.read_excel(
-                    uploaded_xlsx_file, sheet_name=0, index_col=None)
-            else:
-                st.write('このような日誌データ（XLSX形式。最大排尿回数13回）をアップロードしてください．')
-                st.image(form1_sample1_xlsx_image, caption='日誌例', width=480)
-                st.stop()
-    #   elif ri == 'カメラ撮影':
-        else:
+        else: # 'カメラ撮影'
             photo_file_buffer = take_photo_func()
         #   camera_image = st.camera_input("Take a snapshot of today's diary")
         #   if camera_image:
         #       st.image(camera_image, caption='Taken diary snapshot')
             if photo_file_buffer is not None:
-                st.success('撮影画像が登録されました．')
+                st.success('撮影画像が登録されました。')
                 cimg = Image.open(photo_file_buffer)
                 cimg_array = np.array(cimg)
                 st.write(cimg_array.shape)
                 st.image(cimg, caption='日誌画像', width=256)
-                jpg_fn = 'diary_'+str(diary_id)+"_" + \
-                    diary_date.strftime('%Y%m%d')+'.jpg'
+                jpg_fn = 'diary_'+str(diary_id)+"_" + diary_date.strftime('%Y%m%d')+'.jpg'
                 btn = st.download_button(label="Download the registered image",
                                          data=photo_file_buffer,
                                          file_name=jpg_fn,
                                          mime="image/jpg")
                 # WIP dummy data
-                urination_data_df = pd.read_csv("data/urination_data_sample1.csv")
+                ocr_urination_data_df = pd.read_csv("data/urination_data_sample1.csv")
             else:
-                st.write('このような日誌画像を縦長で撮影してください．')
+                st.write('このような日誌画像を縦長で撮影してください。')
                 st.image(form1_sample1_image, caption='日誌画像例', width=240)
                 st.stop()
     # ei.empty()
@@ -413,11 +431,11 @@ def main():
     ###
     #
     # Diary image recognition by OCR
-    # WIP
+    #
     # virtual recognition
-    # urination_data_df = pd.DataFrame(np.arange(13*8).reshape(13, 8),
+    # ocr_urination_data_df = pd.DataFrame(np.arange(13*8).reshape(13, 8),
     # columns=['時', '分', '排尿量', 'もれ', '尿意', '切迫感', '残尿感', 'メモ'])
-    # urination_data_df.loc[:] = [
+    # ocr_urination_data_df.loc[:] = [
     ##     ['8', '00', '100', '無', '有・無', '有・無', '有・無', ''],
     ##     ['10', '30', '250', '無', '有・無', '有・無', '有・無', ''],
     ##     ['13', '00', '300', '無', '有・無', '有・無', '有・無', ''],
@@ -432,23 +450,170 @@ def main():
     ##     ['', '', '', '無・少量・中量・多量', '有・無', '有・無', '有・無', ''],
     # ['', '', '', '無・少量・中量・多量', '有・無', '有・無', '有・無', '']]
     # small checks
-    # st.write(urination_data_df['もれ'])
-    # st.write(urination_data_df['もれ'] == '有')
-    # st.write(urination_data_df['もれ'] == '無')
-    # st.write(urination_data_df[urination_data_df['もれ'] == '有'])
-    # st.write(urination_data_df[urination_data_df['もれ'] == '無'])
-    
-    
+    # st.write(ocr_urination_data_df['もれ'])
+    # st.write(ocr_urination_data_df['もれ'] == '有')
+    # st.write(ocr_urination_data_df['もれ'] == '無')
+    # st.write(ocr_urination_data_df[ocr_urination_data_df['もれ'] == '有'])
+    # st.write(ocr_urination_data_df[ocr_urination_data_df['もれ'] == '無'])
+    # WIP
+    #
+    # actual recognition
+    #######################################
+
     ###
-    # hidden function Downloadable diary document csv
+    # Hidden procedure:  Downloadable diary document csv
     ###
-    # urination_data_csv = convert_df_to_csv(urination_data_df)
-    # urination_data_csv_fn = "diary_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
-    # st.download_button(label="Download diary document as CSV",
-    #                    data=urination_data_csv,
-    #                    file_name=urination_data_csv_fn,
+    # ocr_urination_data_csv = convert_df_to_csv(ocr_urination_data_df)
+    # ocr_urination_data_csv_fn = "ocr_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
+    # st.download_button(label="Download OCR diary document as CSV",
+    #                    data=orc_urination_data_csv,
+    #                    file_name=ocr_urination_data_csv_fn,
     #                    mime='text/csv')
+
+    # df creation from ocr df by deep copy 
+    urination_data_df = ocr_urination_data_df.copy()
+    # for check
+    # st.write(urination_data_df)
+
+    ###
+    # Date and time adjustment (Day and hour)
+    ###
+    ##########
+    # 2022-07-14T16:00 修正
+    #  st.write("<font color='red'>最初の行が深夜０時以降だと日付けがおかしくなる｡</font>", unsafe_allow_html=True)
+    # 2022-07-14T17:15 修正
+    #  st.write("<font color='red'>零時以降が翌日日付けにならない｡</font>", unsafe_allow_html=True)
+    ##########
+    #
+    # Add some English name columns
+    urination_data_df['year'] = diary_date.strftime("%Y")
+    urination_data_df['month'] = diary_date.strftime("%m")
+    urination_data_df['day'] = diary_date.strftime("%d")
+    urination_data_df['時'].replace('', np.nan, inplace=True)
+    urination_data_df['分'].replace('', np.nan, inplace=True)
+    urination_data_df['hour'] = urination_data_df['時'].astype(float)
+    urination_data_df['minute'] = urination_data_df['分'].astype(float)
+    urination_data_df['排尿量'].replace('', np.nan, inplace=True)
+    urination_data_df['micturition'] = urination_data_df['排尿量'].astype(float)
+    # urination_data_df['catheterization'] = urination_data_df['導尿量'].astype(float)
+    urination_data_df['no_leakage'] = [True if b ==
+                                       '無' else False for b in urination_data_df['もれ']]
+    urination_data_df['leakage'] = [1.0 if b !=
+                                    '無' else 0.0 for b in urination_data_df['もれ']]
+    urination_data_df['desire'] = [True if b ==
+                                   '有' else False for b in urination_data_df['尿意']]
+    urination_data_df['urgency'] = [True if b ==
+                                    '有' else False for b in urination_data_df['切迫感']]
+    urination_data_df['remaining'] = [True if b ==
+                                      '有' else False for b in urination_data_df['残尿感']]
+    urination_data_df['memo'] = urination_data_df['メモ']
+    # for check
+    # print(urination_data_df[['year', 'month', 'day', 'hour', 'minute']])
+    urination_data_df['datetime_tmp'] = pd.to_datetime(
+        urination_data_df[['year', 'month', 'day', 'hour', 'minute']]).dt.tz_localize('Asia/Tokyo')
+    #####  COERCE  urination_data_df[['year', 'month', 'day', 'hour', 'minute']], errors='coerce')
+    urination_data_df['datetime_tmp_before'] = urination_data_df['datetime_tmp'].shift(1)
+    urination_data_df['datetime_tmp_after_check'] = urination_data_df['datetime_tmp'] > urination_data_df['datetime_tmp_before']
+    # for check
+    # print(urination_data_df['datetime_tmp_after_check'])
     
+    #
+    # COPY
+    urination_data_df['datetime'] = urination_data_df['datetime_tmp']
+    
+    #
+    # After midnight adjustment
+    after_midnight = False
+    after_midnight_state = ''
+    for index, row in urination_data_df.iterrows():
+        if (after_midnight == False) and (row['datetime_tmp_after_check'] == False):
+            if index == 0:
+                if row['datetime_tmp'] < wakeup_datetime:
+                    after_midnight = True
+                    # 24, 25時以降にhourをいじり, datetimeをつくる
+                    urination_data_df.at[index,
+                                         'hour'] = urination_data_df.at[index, 'hour'] + 24
+                    urination_data_df.at[index, 'datetime'] = urination_data_df.at[index,
+                                                                                   'datetime_tmp'] + datetime.timedelta(hours=24)
+                    after_midnight_state = "Line 0 and the first after midnight"
+                else:
+                    after_midnight_state = "Line 0"
+                    urination_data_df.at[index,
+                                         'datetime'] = urination_data_df.at[index, 'datetime_tmp']
+            else:
+                after_midnight = True
+                # 24, 25時以降にhourをいじり, datetimeをつくる
+                after_midnight_state = "First after midnight"
+                #
+                # rowhour = rowhour + 24
+                # rowdatetime = rowdatetime_tmp + datetime.timedelta(hours=24)
+                urination_data_df.at[index,
+                                     'hour'] = urination_data_df.at[index, 'hour'] + 24
+                urination_data_df.at[index, 'datetime'] = urination_data_df.at[index,
+                                                                               'datetime_tmp'] + datetime.timedelta(hours=24)
+        elif after_midnight == True:
+            # 24, 25時以降ということであるので，hourをいじり, datetimeをつくる
+            after_midnight_state = "Second or later after midnight"
+            urination_data_df.at[index,
+                                 'hour'] = urination_data_df.at[index, 'hour'] + 24
+            urination_data_df.at[index, 'datetime'] = urination_data_df.at[index,
+                                                                           'datetime_tmp'] + datetime.timedelta(hours=24)
+            # rowhour = rowhour + 24
+            # rowdatetime = rowdatetime_tmp + datetime.timedelta(hours=24)
+        else:
+            after_midnight_state = "Before midnight"
+            urination_data_df.at[index,
+                                 'datetime'] = urination_data_df.at[index, 'datetime_tmp']
+    # for check
+    print(after_midnight_state)
+    # print(urination_data_df[['datetime', 'datetime_tmp_after_check', 'day', 'hour']])
+    
+    #
+    # Calculate time difference
+    urination_data_df['time_difference'] = urination_data_df['datetime'].diff()
+    urination_data_df['time_difference'] = urination_data_df['time_difference'].dt.total_seconds() / 60.0
+    
+    #
+    # Time phase
+    first_after_wakeup_found = False
+    # WIP
+    # 最初の行が９時以降ならfirst_after_wakeup_found = Trueにしてしまうことにするかどうか。
+    first_after_next_wakeup_found = False
+    urination_data_df['time_phase'] = urination_data_df['datetime']
+    for index, row in urination_data_df.iterrows():
+        if row['datetime'] < wakeup_datetime:
+            urination_data_df.at[index, 'time_phase'] = 'before_wakeup'
+        elif row['datetime'] < bed_datetime:
+            if first_after_wakeup_found == False:
+                first_after_wakeup_found = True
+                urination_data_df.at[index,
+                                     'time_phase'] = 'first_after_wakeup'
+            else:
+                urination_data_df.at[index, 'time_phase'] = 'day_time'
+        elif row['datetime'] < next_wakeup_datetime:
+            urination_data_df.at[index, 'time_phase'] = 'after_bed'
+        else:
+            if first_after_next_wakeup_found == False:
+                first_after_next_wakeup_found = True
+                urination_data_df.at[index, 'time_phase'] = 'first_after_next_wakeup'
+            else:
+                urination_data_df.at[index, 'time_phase'] = 'next_day_time'
+                first_after_bed_found = False
+    #
+    #  first after bed datetime
+    for index, row in urination_data_df.iterrows():
+        if row['datetime'] >= bed_datetime:
+            if first_after_bed_found == False:
+                first_after_bed_found = True
+                first_after_bed_datetime = row['datetime']
+                
+    #
+    # Drop some temporal English name columns
+    urination_data_df.drop(columns=[
+        'datetime_tmp', 'datetime_tmp_before', 'datetime_tmp_after_check'], inplace=True)
+    # for check
+    # st.write(urination_data_df)
+
     
     ###
     # Recognized diary display
@@ -471,147 +636,35 @@ def main():
                 st.image(resimg, caption='認識された日誌画像', width=256)
             else:
                 st.warning('画像ではなく表ファイルがアップロードされています（画像認識は無し）。')
-    
-        ###
-        # Date and time adjustment (Day and hour)
-        ###
-        ##########
-        # 2022-07-14T16:00 修正
-        #  st.write("<font color='red'>最初の行が深夜０時以降だと日付けがおかしくなる｡</font>", unsafe_allow_html=True)
-        # 2022-07-14T17:15 修正
-        #  st.write("<font color='red'>零時以降が翌日日付けにならない｡</font>", unsafe_allow_html=True)
-        ##########
-        #
-        # Add some English name columns
-        urination_data_df['year'] = diary_date.strftime("%Y")
-        urination_data_df['month'] = diary_date.strftime("%m")
-        urination_data_df['day'] = diary_date.strftime("%d")
-        urination_data_df['時'].replace('', np.nan, inplace=True)
-        urination_data_df['分'].replace('', np.nan, inplace=True)
-        urination_data_df['hour'] = urination_data_df['時'].astype(float)
-        urination_data_df['minute'] = urination_data_df['分'].astype(float)
-        urination_data_df['排尿量'].replace('', np.nan, inplace=True)
-        urination_data_df['micturition'] = urination_data_df['排尿量'].astype(float)
-        # urination_data_df['catheterization'] = urination_data_df['導尿量'].astype(float)
-        urination_data_df['no_leakage'] = [True if b ==
-                                           '無' else False for b in urination_data_df['もれ']]
-        urination_data_df['leakage'] = [1.0 if b !=
-                                        '無' else 0.0 for b in urination_data_df['もれ']]
-        urination_data_df['desire'] = [True if b ==
-                                       '有' else False for b in urination_data_df['尿意']]
-        urination_data_df['urgency'] = [True if b ==
-                                        '有' else False for b in urination_data_df['切迫感']]
-        urination_data_df['remaining'] = [True if b ==
-                                          '有' else False for b in urination_data_df['残尿感']]
-        urination_data_df['memo'] = urination_data_df['メモ']
-        # for check
-        # print(urination_data_df[['year', 'month', 'day', 'hour', 'minute']])
-        urination_data_df['datetime_tmp'] = pd.to_datetime(
-            urination_data_df[['year', 'month', 'day', 'hour', 'minute']]).dt.tz_localize('Asia/Tokyo')
-        #####    urination_data_df[['year', 'month', 'day', 'hour', 'minute']], errors='coerce')
-        urination_data_df['datetime_tmp_before'] = urination_data_df['datetime_tmp'].shift(
-            1)
-        urination_data_df['datetime_tmp_after_check'] = urination_data_df['datetime_tmp'] > urination_data_df['datetime_tmp_before']
-        # for check
-        # print(urination_data_df['datetime_tmp_after_check'])
-    
-        #
-        # COPY
-        urination_data_df['datetime'] = urination_data_df['datetime_tmp']
-        #
-        # After midnight adjustment
-        after_midnight = False
-        after_midnight_state = ''
-        for index, row in urination_data_df.iterrows():
-            if (after_midnight == False) and (row['datetime_tmp_after_check'] == False):
-                if index == 0:
-                    if row['datetime_tmp'] < wakeup_datetime:
-                        after_midnight = True
-                        # 24, 25時以降にhourをいじり, datetimeをつくる
-                        urination_data_df.at[index,
-                                             'hour'] = urination_data_df.at[index, 'hour'] + 24
-                        urination_data_df.at[index, 'datetime'] = urination_data_df.at[index,
-                                                                                       'datetime_tmp'] + datetime.timedelta(hours=24)
-                        after_midnight_state = "Line 0 and the first after midnight"
-                    else:
-                        after_midnight_state = "Line 0"
-                        urination_data_df.at[index,
-                                             'datetime'] = urination_data_df.at[index, 'datetime_tmp']
-                else:
-                    after_midnight = True
-                    # 24, 25時以降にhourをいじり, datetimeをつくる
-                    after_midnight_state = "First after midnight"
-                    #
-                    # rowhour = rowhour + 24
-                    # rowdatetime = rowdatetime_tmp + datetime.timedelta(hours=24)
-                    urination_data_df.at[index,
-                                         'hour'] = urination_data_df.at[index, 'hour'] + 24
-                    urination_data_df.at[index, 'datetime'] = urination_data_df.at[index,
-                                                                                   'datetime_tmp'] + datetime.timedelta(hours=24)
-            elif after_midnight == True:
-                # 24, 25時以降ということであるので，hourをいじり, datetimeをつくる
-                after_midnight_state = "Second or later after midnight"
-                urination_data_df.at[index,
-                                     'hour'] = urination_data_df.at[index, 'hour'] + 24
-                urination_data_df.at[index, 'datetime'] = urination_data_df.at[index,
-                                                                               'datetime_tmp'] + datetime.timedelta(hours=24)
-                # rowhour = rowhour + 24
-                # rowdatetime = rowdatetime_tmp + datetime.timedelta(hours=24)
-            else:
-                after_midnight_state = "Before midnight"
-                urination_data_df.at[index,
-                                     'datetime'] = urination_data_df.at[index, 'datetime_tmp']
-            # for check
-            print(after_midnight_state)
-        # for check
-        # print(urination_data_df[['datetime', 'datetime_tmp_after_check', 'day', 'hour']])
-        #
-        # Calculate time difference
-        urination_data_df['time_difference'] = urination_data_df['datetime'].diff()
-        urination_data_df['time_difference'] = urination_data_df['time_difference'].dt.total_seconds() / 60.0
-        #
-        # Time phase
-        first_after_wakeup_found = False
-        # WIP
-        # 最初の行が９時以降ならfirst_after_wakeup_found = Trueにしてしまうことにするかどうか。
-        first_after_next_wakeup_found = False
-        urination_data_df['time_phase'] = urination_data_df['datetime']
-        for index, row in urination_data_df.iterrows():
-            if row['datetime'] < wakeup_datetime:
-                urination_data_df.at[index, 'time_phase'] = 'before_wakeup'
-            elif row['datetime'] < bed_datetime:
-                if first_after_wakeup_found == False:
-                    first_after_wakeup_found = True
-                    urination_data_df.at[index,
-                                         'time_phase'] = 'first_after_wakeup'
-                else:
-                    urination_data_df.at[index, 'time_phase'] = 'day_time'
-            elif row['datetime'] < next_wakeup_datetime:
-                urination_data_df.at[index, 'time_phase'] = 'after_bed'
-            else:
-                if first_after_next_wakeup_found == False:
-                    first_after_next_wakeup_found = True
-                    urination_data_df.at[index,
-                                         'time_phase'] = 'first_after_next_wakeup'
-                else:
-                    urination_data_df.at[index, 'time_phase'] = 'next_day_time'
-        first_after_bed_found = False
-        for index, row in urination_data_df.iterrows():
-            if row['datetime'] >= bed_datetime:
-                if first_after_bed_found == False:
-                    first_after_bed_found = True
-                    first_after_bed_datetime = row['datetime']
-        # for check
-        # print(urination_data_df)
-        #
-        # Drop some temporal English name columns
-        urination_data_df.drop(columns=[
-                               'datetime_tmp', 'datetime_tmp_before', 'datetime_tmp_after_check'], inplace=True)
-        # for check
-        # st.write(urination_data_df)
 
+        ###
+        # Downloadable recognized document (=data) Type A
+        ###
         #
-        # Aggrid
+        # Downloadable recognized document preparation Type A
+        ud_df1 = urination_data_df.drop(columns=['時', '分', 'year', 'month', 'day',
+                                                 'hour', 'minute',
+                                                 'micturition',
+                                                 'leakage', 'desire', 'urgency', 'remaining',
+                                                 'memo'])
+        ud_df = ud_df1.dropna(subset=['datetime'])
+        #
+        # Downloadable recognized document display Type A by st.table
+        st.table(ud_df.style.highlight_max(axis=0))
+        #
+        # Downloadable recognized document CSV (=data CSV)
+        ud_csv = convert_df_to_csv(ud_df)
+        ud_csv_fn = "ud_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
+        st.subheader("日誌データ（認識結果）のCSV形式でのダウンロード")
+        st.download_button(label="Download recognized data as CSV",
+                           data=ud_csv,
+                           file_name=ud_csv_fn,
+                           mime='text/csv')
+                
+        ###
+        # Downloadable editable document (=data) Type B
+        ###
+        # Downloadable editable document display Type B by Aggrid
         cellstyle_jscode = JsCode(
             """
         function(params) {
@@ -633,20 +686,32 @@ def main():
         urination_data_gb.configure_selection(selection_mode="multiple", use_checkbox=True)
         urination_data_gb.configure_pagination()
         urination_data_gb.configure_side_bar()
-        urination_data_gb.configure_default_column(groupable=True, value=True, enableRowGroup=True,
-                                                   aggFunc="sum", editable=True)
+#       urination_data_gb.configure_default_column(groupable=True, value=True, enableRowGroup=True,
+#                                                  aggFunc="sum", editable=True)
+        urination_data_gb.configure_default_column(groupable=True, editable=True)
         urination_data_gb.configure_column("time_phase", cellStyle=cellstyle_jscode)
         urination_data_gridOptions = urination_data_gb.build()
         urination_data_gd = AgGrid(urination_data_df, theme='blue',
                                    gridOptions=urination_data_gridOptions,
-                                   enable_enterprise_modules=True,
+                                   # enable_enterprise_modules=True,
                                    allow_unsafe_jscode=True,
-                                   update_mode=GridUpdateMode.SELECTION_CHANGED)
+                                   update_mode=GridUpdateMode.SELECTION_CHANGED | GridUpdateMode.VALUE_CHANGED,)
         #
-        # Create edited data frame of urination data
+        # Downloadable edited document preparation Type B
         urination_data_gd_df = urination_data_gd['data']
+        # Downloadable edited document Type B 
+        ud_gd_csv = convert_df_to_csv(urination_data_gd_df)
+        ud_gd_csv_fn = "gd_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
+        st.subheader("日誌データ（編集後）のCSV形式でのダウンロード")
+        st.download_button(label="Download edited data as CSV",
+                           data=ud_gd_csv,
+                           file_name=ud_gd_csv_fn,
+                           mime='text/csv')
         # for check
         #print(urination_data_gd_df)
+
+        #
+        # plotly graph
         with ud_e.container():
             # st.write(urination_data_gd["selected_rows"])
             selected_rows_gd = urination_data_gd["selected_rows"]
@@ -654,35 +719,6 @@ def main():
             if len(selected_rows) != 0:
                 fig_gd = px.bar(selected_rows, "time_phase", color="no_leakage")
                 st.plotly_chart(fig_gd)
-    
-        ###
-        # Downloadable recognized document (=data)
-        ###
-        #
-        #  Downloadable recognized document preparation
-        ud_df1 = urination_data_df.drop(columns=['時', '分', 'year', 'month', 'day',
-                                                 'hour', 'minute',
-                                                 'micturition',
-                                                 'leakage', 'desire', 'urgency', 'remaining',
-                                                 'memo'])
-        ud_df = ud_df1.dropna(subset=['datetime'])
-        #
-        #  Downloadable recognized document display
-        st.table(ud_df.style.highlight_max(axis=0))
-    
-    
-    ###
-    # Downloadable recognized document CSV (=data CSV)
-    ###
-    rdc_e = st.empty()
-    with rdc_e.container():
-        st.subheader("日誌データ（認識結果）のCSV形式でのダウンロード")
-        ud_csv = convert_df_to_csv(ud_df)
-        ud_csv_fn = "ud_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
-        st.download_button(label="Download data as CSV",
-                           data=ud_csv,
-                           file_name=ud_csv_fn,
-                           mime='text/csv')
     
     
     ###
@@ -704,7 +740,8 @@ def main():
         chart_base = alt.Chart(chart_df).encode(x='datetime', y='value', color='parameter')
         chart_layer = alt.layer(chart_base.mark_line(), chart_base.mark_point(), background=graph_background_color, title='Volume and leak')
         st.altair_chart(chart_layer, use_container_width=True)
-    #   st.write(pd.DataFrame(vol_df))
+        # for check
+        # st.write(pd.DataFrame(vol_df))
     
     
     ###
@@ -712,23 +749,21 @@ def main():
     ###
     lcol2, rcol2 = st.columns(2)
     
-    
     ###
     # Wakeup time and bed time display
     ###
     wb_e = rcol2.empty()
     with wb_e.container():
         st.header('起床時刻・就寝時刻・翌日起床時刻・翌日就寝時刻：')
-        st.text('対象日の起床時刻は' + wakeup_datetime.strftime("%Y-%m-%dT%H:%M") + 'です．')
-        st.text('対象日の就寝時刻は' + bed_datetime.strftime("%Y-%m-%dT%H:%M") + 'です．')
-        st.text('対象日の就寝時刻と起床時刻の差は' + str(bed_datetime-wakeup_datetime) + 'です．')
-        st.text('翌日の起床時刻は' + next_wakeup_datetime.strftime("%Y-%m-%dT%H:%M") + 'です．')
+        st.text('対象日の起床時刻は' + wakeup_datetime.strftime("%Y-%m-%dT%H:%M") + 'です。')
+        st.text('対象日の就寝時刻は' + bed_datetime.strftime("%Y-%m-%dT%H:%M") + 'です。')
+        st.text('対象日の就寝時刻と起床時刻の差は' + str(bed_datetime-wakeup_datetime) + 'です。')
+        st.text('翌日の起床時刻は' + next_wakeup_datetime.strftime("%Y-%m-%dT%H:%M") + 'です。')
         st.text('翌朝の起床時刻と対象日の就寝時刻の差（つまり睡眠時間）' +
-                str(next_wakeup_datetime - bed_datetime) + 'です．')
-        st.text('翌日の就寝時刻は' + next_bed_datetime.strftime("%Y-%m-%dT%H:%M") + 'です．')
+                str(next_wakeup_datetime - bed_datetime) + 'です。')
+        st.text('翌日の就寝時刻は' + next_bed_datetime.strftime("%Y-%m-%dT%H:%M") + 'です。')
         st.text('翌日の就寝時刻と起床時刻の差は' +
-                str(next_bed_datetime - next_wakeup_datetime) + 'です．')
-    
+                str(next_bed_datetime - next_wakeup_datetime) + 'です。')
     
     ###
     # Indices display
@@ -783,29 +818,35 @@ def main():
             nocturia_index = int(1)
         pnv = nocturia_index - 1
         nbci = number_of_nocturnal_urination - pnv
-    
+        #
         number_of_urinary_tracts = 0
         urinary_tract_volume = 0
         urinary_tract_volume_per_cycle = 0
         minimum_single_urinary_tract_volume = 0
         maximum_single_urinary_tract_volume = 0
-    # 昼間排尿回数 8回以上 昼間頻尿
-    # 夜間排尿回数 1回以上 夜間頻尿 Nocturia episodesという
-    # 最大一回排尿量 maximum voided volume MVV という
-    # 夜間多尿指数(NPi) 夜間排尿量/一日尿量 （若年20％，高齢33％のスレショルド）
-    #
-    # 夜間頻尿指数(Ni) 夜間排尿量/最大一回排尿量 （Ni>1が夜間頻尿。切り上げ）
-    # 予測夜間排尿回数(PNV)  (夜間排尿量/最大一回排尿量) - 1
-    # 夜間膀胱容量指数(NBCi) 実際の夜間排尿回数-予測夜間排尿回数 （NBCi>0を機能的膀胱容量低下での夜間頻尿）
-    # 多尿 一日尿量が40ml/kg以上というスレショルド
-    # 初回睡眠時間 Hours of undisturbed sleep
-    #
-    # 体重
-    # 最大排尿量/体重 （4ml/kg以下が機能的膀胱容量低下のスレショルド）
-    # 残尿回数
-    # 一日残尿量
-    # 尿失禁回数
-    # 尿失禁量(g/日)
+        # 昼間排尿回数 8回以上 昼間頻尿
+        # 夜間排尿回数 1回以上 夜間頻尿 Nocturia episodesという
+        # 最大一回排尿量 maximum voided volume MVV という
+        # 夜間多尿指数(NPi) 夜間排尿量/一日尿量 （若年20％，高齢33％のスレショルド）
+        #
+        # 夜間頻尿指数(Ni) 夜間排尿量/最大一回排尿量 （Ni>1が夜間頻尿。切り上げ）
+        # 予測夜間排尿回数(PNV)  (夜間排尿量/最大一回排尿量) - 1
+        # 夜間膀胱容量指数(NBCi) 実際の夜間排尿回数-予測夜間排尿回数 （NBCi>0を機能的膀胱容量低下での夜間頻尿）
+        # 多尿 一日尿量が40ml/kg以上というスレショルド
+        # 初回睡眠時間 Hours of undisturbed sleep
+        #
+        # 体重
+        # 最大排尿量/体重 （4ml/kg以下が機能的膀胱容量低下のスレショルド）
+        # 残尿回数
+        # 一日残尿量
+        # 尿失禁回数
+        # 尿失禁量(g/日)
+
+        ###
+        # Downloadable indices 
+        ###
+        #
+        # Downloadable indices preparation
         diary_date_int = int(diary_date.strftime('%Y%m%d'))
         indices_df = pd.DataFrame(columns=['指標', '値', '単位'],
                                   data=[
@@ -855,21 +896,21 @@ def main():
                                       ['最大一回導尿量', int(
                                           maximum_single_urinary_tract_volume), 'ml'],
         ])
+        
+        #
+        # Downloadable indices display
         st.table(indices_df)
-        ###
+        #
         # Downloadable indices CSV
-        ###
-        indc_e = st.empty()
-        with indc_e.container():
-            st.subheader("排尿関連指標のCSV形式でのダウンロード")
-            indices_csv = convert_df_to_csv(indices_df)
-            indices_csv_fn = "indices_" + \
-                str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
-            st.download_button(label="Download indices as CSV",
-                               data=indices_csv,
-                               file_name=indices_csv_fn,
-                               mime='text/csv')
-    
+        indices_csv = convert_df_to_csv(indices_df)
+        indices_csv_fn = "indices_" + \
+            str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
+        st.subheader("排尿関連指標のCSV形式でのダウンロード")
+        st.download_button(label="Download indices as CSV",
+                           data=indices_csv,
+                           file_name=indices_csv_fn,
+                           mime='text/csv')
+        
     ###
     # Column 2 end
     ###
@@ -893,4 +934,42 @@ def main():
 if __name__ == "__main__":
     main()
 
+
+
+
+#
+# df = pd.read_sql('SELECT * FROM product', con=conn)
+# st.write(df)
+# 
+# gd = GridOptionsBuilder.from_dataframe(df)
+# gd.configure_pagination(enabled=True)
+# gd.configure_default_column(editable=True, groupable=True)
+# sel_mode = st.radio('Selection Type', options=['single', 'multiple'])
+# gd.configure_selection(selection_mode=sel_mode, use_checkbox=True)
+# gridoptions = gd.build()
+# grid_table = AgGrid(df, gridOptions=gridoptions,
+#                     update_mode=GridUpdateMode.SELECTION_CHANGED | GridUpdateMode.VALUE_CHANGED,
+#                     height=500,
+#                     allow_unsafe_jscode=True,
+#                     # enable_enterprise_modules = True,
+#                     theme='fresh')
+# 
+# sel_row = grid_table["selected_rows"]
+# st.subheader("Output")
+# st.write(sel_row)
+# 
+# df_selected = pd.DataFrame(sel_row)
+# 
+# if st.button('Update db', key=1):
+#     for i, r in df_selected.iterrows():
+#         id = r['id']
+#         cnt = r['count']
+#         update(id, cnt)
+# 
+#     st.write('##### Updated db')
+#     df_update = pd.read_sql('SELECT * FROM product', con=conn)
+#     st.write(df_update)
+# 
+# cur.close()
+# conn.close()
 
