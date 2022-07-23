@@ -458,13 +458,14 @@ def main():
         #    if uploaded_pdf_file is not None:
         #        st.success('日誌画像が登録されました。')
         #        # WIP
-        #        # Poppler問題を解決しないといけないさらにPDFから画像複数ページへの変換をしないといけない
-        #        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-        #          fp = Path(tmp_file.name)
+        #        # Poppler問題を解決しないといけない。
+        #        # さらにPDFから画像複数ページへの変換かハンドリング工夫をしないといけない。
+        #        with tempfile.NamedTemporaryFile(delete=False) as pdf_tmp_file:
+        #          fp = Path(pdf_tmp_file.name)
         #          fp.write_bytes(uploaded_pdf_file.getvalue())
-        #          pimgs = convert_from_path(tmp_file.name)
-        #          st.image(pimgs, caption='Uploaded image')
-        #      CLOSE()すべきかな？
+        #          pimgs = convert_from_path(pdf_tmp_file.name)
+        #          st.image(pimgs, caption='Uploaded image(s)')
+        #        # with しないならCLOSE()すべきだがwithしてるので不要。
         #    else: 
         #     st.write('このような日誌画像をアップロードしてください。')
         #     st.image(form1_sample1_image, caption='日誌画像例', width=120)
@@ -477,8 +478,8 @@ def main():
         #         st.success('日誌画像が登録されました。')
         #         dimgs = []
         #         for i, uploaded_jpg_file in enumerate(uploaded_jpg_files):
-        #             # 複数枚きたときの扱いはこれでよい。下のdimgに一枚ずつ入っている。
-        #             #               bytes_data = uploaded_jpg_file.read()
+        #             # 複数枚きたときの扱いはここから改変。下のdimgに一枚ずつ入っている。
+        #             #    bytes_data = uploaded_jpg_file.read()
         #             bytes_data = uploaded_jpg_file.getvalue()
         #             dimgs.append(Image.open(io.BytesIO(bytes_data)))
         #             st.image(dimgs[i], caption='Uploaded jpeg image '+str(i),
@@ -490,17 +491,21 @@ def main():
         elif ri == '画像ファイル(JPG)':
             uploaded_jpg_file = upload_jpg_file_func()
             if uploaded_jpg_file is not None:
+                ##########
+                # uploaded_jpg_file is a file-like.
                 st.success('日誌画像が登録されました。')
                 ##########
-                # WIP start
-                with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                    fp = Path(tmp_file.name)
+                # WIP start erase or not?
+                with tempfile.NamedTemporaryFile(delete=False) as jpg_tmp_file:
+                    fp = Path(jpg_tmp_file.name)
                     fp.write_bytes(uploaded_jpg_file.getvalue())
-                    # forcheck
-                    print(tmp_file.name)
-                # WIP end
+                    # jimg = Image.open(jpg_tmp_file.name)
+                    # st.image(jimg, caption='Uploaded jpg image',use_column_width=False)
+                    # for check
+                    # print(jpg_tmp_file.name)
+                # WIP end erase or not
                 ##########
-                bytes_data = uploaded_jpg_file.getvalue()
+                bytes_data = uploaded_jpg_file.getvalue()  
                 dimg = Image.open(io.BytesIO(bytes_data))
                 st.image(dimg, caption='Uploaded jpeg image ', use_column_width=True)
                 st.write("filename: ", uploaded_jpg_file.name)
@@ -531,7 +536,20 @@ def main():
         #   if camera_image:
         #       st.image(camera_image, caption='Taken diary snapshot')
             if photo_file_buffer is not None:
+                ##########
+                # photo_file_buffer is a file-like.
                 st.success('撮影画像が登録されました。')
+                ##########
+                # WIP start erase or not?
+                with tempfile.NamedTemporaryFile(delete=False) as photo_tmp_file:
+                    fp = Path(photo_tmp_file.name)
+                    fp.write_bytes(photo_file_buffer.getvalue())
+                    # ccjimg = Image.open(photo_tmp_file.name)
+                    # st.image(ccimg, caption='Taken photo',use_column_width=False)
+                    # for check
+                    # print(photo_tmp_file.name)
+                # WIP end erase or not
+                ##########
                 cimg = Image.open(photo_file_buffer)
                 cimg_array = np.array(cimg)
                 st.write(cimg_array.shape)
@@ -909,9 +927,6 @@ def main():
         st.text('翌日の就寝時刻と起床時刻の差は' +
                 str(next_bed_datetime - next_wakeup_datetime) + 'です。')
         
-        jimg = Image.open(tmp_file.name)
-        st.image(jimg, caption='Uploaded jpg image',use_column_width=False)
-
         
     ###
     # Indices display
