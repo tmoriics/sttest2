@@ -27,6 +27,7 @@ import locale
 import datetime
 import time
 import io
+import uuid
 import json
 import base64
 import tempfile
@@ -59,7 +60,7 @@ from st_aggrid.shared import GridUpdateMode, JsCode
 # Locale
 ###
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-# locale.setlocale(locale.LC_ALL, 'en_US.UTF-8') No good on Docker
+# locale.setlocale(locale.LC_ALL, 'en_US.UTF-8') WORKED in mac for months. No good on Docker
 # locale.setlocale(locale.LC_ALL, 'C.UTF-8')  Not work on mac. probably works on all machines
 # locale.setlocale(locale.LC_ALL, 'ja_JP.UTF-8') No good on Heroku
 
@@ -87,12 +88,79 @@ tz_jst = datetime.timezone(datetime.timedelta(hours=9))
 #       "Fukuoka":"福岡", "Saga":"佐賀", "Nagasaki":"長崎",
 #       "Kumamoto":"熊本", "Oita":"大分", "Miyazaki":"宮崎",
 #       "Kagoshima":"鹿児島", "Okinawa":"沖縄"})
+#
+
 
 #####
 #####
 # Functions
 #####
 #####
+
+###
+# Secret get ocr text from a pdf file
+###
+# OCRテキスト取得  PDFは一回１０枚まで対応
+# pdf_fn = 'pdf_diary_'+str(diary_id)+"_" + diary_date.strftime('%Y%m%d')
+def get_ocr_text_from_pdf_file(pdffile, diary_id, diary_date):
+    api_url = os.environ.get('CLOVA_API_URL')
+    secret_key = os.environ.get('CLOVA_SECRET_KEY')
+    request_json = {
+        "images": [
+            {
+                "format": "pdf",
+                "name": "pdf_diary_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')
+            }
+        ],
+        "version": "V2",
+        "requestId": str(uuid.uuid4()),
+        "timestamp": int(round(time.time() * 1000)),
+        "lang":"ja"
+    }
+    
+    headers = {
+        "X-OCR-SECRET": secret_key
+    }
+    payload = {"message": json.dumps(request_json).encode('UTF-8')}
+    files = [
+        ("file", open(pdffile,'rb'))
+    ]
+    response = requests.request('POST', api_url, headers=headers, data = payload, files = files)
+    # print(response.status_code)
+    return response.json()
+
+
+###
+# Secret get ocr text from a jpeg file
+###
+# jpg_fn = 'jpg_diary_'+str(diary_id)+"_" + diary_date.strftime('%Y%m%d')
+def get_ocr_text_from_jpg_file(jpgfile, diary_id, diary_date):
+    api_url = os.environ.get('CLOVA_API_URL')
+    secret_key = os.environ.get('CLOVA_SECRET_KEY')
+    request_json = {
+        "images": [
+            {
+                "format": "jpg",
+                "name": "jpg_diary_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')
+            }
+        ],
+        "version": "V2",
+        "requestId": str(uuid.uuid4()),
+        "timestamp": int(round(time.time() * 1000)),
+        "lang":"ja"
+    }
+    
+    headers = {
+        "X-OCR-SECRET": secret_key
+    }
+    payload = {"message": json.dumps(request_json).encode('UTF-8')}
+    files = [
+        ("file", open(jpgfile,'rb'))
+    ]
+    response = requests.request('POST', api_url, headers=headers, data = payload, files = files)
+    # print(response.status_code)
+    return response.json()
+
 
 ###
 ### Convert a DataFrame to CSV with utf-8-sig
@@ -394,9 +462,9 @@ def main():
         #        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
         #          fp = Path(tmp_file.name)
         #          fp.write_bytes(uploaded_pdf_file.getvalue())
-        #          pmgs = convert_from_path(tmp_file.name)
+        #          pimgs = convert_from_path(tmp_file.name)
         #          st.image(pimgs, caption='Uploaded image')
-        #      FP.CLOSE()すべきかな？
+        #      CLOSE()すべきかな？
         #    else: 
         #     st.write('このような日誌画像をアップロードしてください。')
         #     st.image(form1_sample1_image, caption='日誌画像例', width=120)
@@ -423,6 +491,15 @@ def main():
             uploaded_jpg_file = upload_jpg_file_func()
             if uploaded_jpg_file is not None:
                 st.success('日誌画像が登録されました。')
+                ##########
+                # WIP start
+                with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                    fp = Path(tmp_file.name)
+                    fp.write_bytes(uploaded_jpg_file.getvalue())
+                    # forcheck
+                    print(tmp_file.name)
+                # WIP end
+                ##########
                 bytes_data = uploaded_jpg_file.getvalue()
                 dimg = Image.open(io.BytesIO(bytes_data))
                 st.image(dimg, caption='Uploaded jpeg image ', use_column_width=True)
@@ -831,7 +908,11 @@ def main():
         st.text('翌日の就寝時刻は' + next_bed_datetime.strftime("%Y-%m-%dT%H:%M") + 'です。')
         st.text('翌日の就寝時刻と起床時刻の差は' +
                 str(next_bed_datetime - next_wakeup_datetime) + 'です。')
-    
+        
+        jimg = Image.open(tmp_file.name)
+        st.image(jimg, caption='Uploaded jpg image',use_column_width=False)
+
+        
     ###
     # Indices display
     ###
