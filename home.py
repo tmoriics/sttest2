@@ -12,8 +12,9 @@
 # 2022-07-18T23:18
 # 2022-07-19T15:49 
 # 2022-07-20T22:00
-# 2022-07-22T12:00 Trying session state still after adding aggrid and credentials.toml
-#     7/17 WIP cacheが働かない。memo機能も試したが十分早いのでUploadのCacheは使わないでしばらくいく。
+# 2022-07-22T12:00 
+# 2022-07-23T12:00 Trying session state still after adding aggrid and credentials.toml
+#     7/17 WIP cacheが働かない。memo機能も試したがでUploadのCacheは使わないでしばらくいく。
 
 
 ###
@@ -29,14 +30,14 @@ import io
 import base64
 import tempfile
 from pathlib import Path
-from urllib.request import Request, urlopen
+# from urllib.request import Request, urlopen
 import requests
 import numpy as np
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFilter
 import altair as alt
 import streamlit as st
 import plotly.express as px
@@ -57,7 +58,9 @@ from st_aggrid.shared import GridUpdateMode, JsCode
 # Locale
 ###
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-# locale.setlocale(locale.LC_ALL, 'ja_JP.UTF-8')
+# locale.setlocale(locale.LC_ALL, 'en_US.UTF-8') No good on Docker
+# locale.setlocale(locale.LC_ALL, 'C.UTF-8')  Not work on mac. probably works on all machines
+# locale.setlocale(locale.LC_ALL, 'ja_JP.UTF-8') No good on Heroku
 
 ###
 # Timezone
@@ -242,7 +245,13 @@ def main():
     ###
     dt_now = datetime.datetime.now(tz_jst)
     rcol1.markdown('### 現在の日時：'+dt_now.strftime('%Y年%m月%d日 %H:%M'+'です。'))
-    
+    weather_url = 'https://weather.tsukumijima.net/api/forecast'
+    params = {'city': 130010}
+    r = requests.get(weather_url, params=params)
+    weather_data=r.json()
+    rcol1.info('東京： '+weather_data['forecasts'][0]['telop'])
+    # rcol1.write('HEADLINE'+weather_data['description']['headlineText'])
+    # rcol1.write(weather_data['description']['text'][:101])
     
     ###
     # Check point by streamlit secrets management function
@@ -417,6 +426,21 @@ def main():
                 ocr_urination_data_df = pd.read_csv("data/urination_data_sample1.csv")
             else:
                 st.write('このような日誌画像(JPG)をアップロードしてください。')
+                w = form1_sample1_image.width
+                h = form1_sample1_image.height
+                im_a = Image.new("L", (w, h), 0)
+                draw = ImageDraw.Draw(im_a)
+                draw.ellipse( ((w*0.01,h*0.01), (w-w*0.01,h-h*0.01)), fill=255)
+                im_a_filtered = im_a.filter(ImageFilter.GaussianBlur(96))
+                form1_sample1_image.putalpha(im_a_filtered)
+                form1_sample1_draw = ImageDraw.Draw(form1_sample1_image)
+                form1_sample1_draw.line( ((w*0.01, h*0.01),
+                                          (w-w*0.01, h*0.01), 
+                                          (w-w*0.01, h-h*0.01), 
+                                          (w*0.01, h-h*0.01), 
+                                          (w*0.01, h*0.01)), 
+                                         fill=(0, 192, 192), 
+                                         width=48 )
                 st.image(form1_sample1_image, caption='日誌画像例', width=240)
                 st.stop()
         else: # 'カメラ撮影'
