@@ -27,6 +27,7 @@ import locale
 import datetime
 import time
 import io
+import json
 import base64
 import tempfile
 from pathlib import Path
@@ -245,11 +246,15 @@ def main():
     ###
     dt_now = datetime.datetime.now(tz_jst)
     rcol1.markdown('### 現在の日時：'+dt_now.strftime('%Y年%m月%d日 %H:%M'+'です。'))
+
     weather_url = 'https://weather.tsukumijima.net/api/forecast'
     params = {'city': 130010}
     r = requests.get(weather_url, params=params)
     weather_data=r.json()
-    rcol1.info('東京： '+weather_data['forecasts'][0]['telop'])
+    # with open('data/tmp.json', 'w') as f:
+    #   json.dump(weather_data, f, indent=4)
+    rcol1.image(weather_data['forecasts'][1]['image']['url'])
+    rcol1.text('明日の東京の天気： '+weather_data['forecasts'][1]['telop'])
     # rcol1.write('HEADLINE'+weather_data['description']['headlineText'])
     # rcol1.write(weather_data['description']['text'][:101])
     
