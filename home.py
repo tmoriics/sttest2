@@ -13,7 +13,8 @@
 # 2022-07-19T15:49 
 # 2022-07-20T22:00
 # 2022-07-22T12:00 
-# 2022-07-23T12:00 Trying session state still after adding aggrid and credentials.toml
+# 2022-07-23T12:00 
+# 2022-07-24T10:30 Trying session state still after adding aggrid and credentials.toml
 #     7/17 WIP cacheが働かない。memo機能も試したがでUploadのCacheは使わないでしばらくいく。
 
 
@@ -257,6 +258,14 @@ def calculate_datetime_from_date_and_time_strings(date_dt, hour_s, minute_s, pm_
     return ret
 
 
+###
+### Update counter
+###
+def update_counter():
+    st.session_state.count += st.session_state.increment_value
+    st.session_state.last_updated = st.session_state.update_time
+
+    
 #####
 #####
 # Main script
@@ -287,16 +296,19 @@ def main():
     ###
     # Setting by the sidebar
     ###
-    #
-    # Setup parameters
     graph_background_color = "#EEFFEE"
-    display_recognized_image = False
-    #
-    # Sidebar display
     # graph_background_color = st.sidebar.color_picker('Graph background color', value='#EEFFEE')
+    # display_recognized_image = False
     display_recognized_image = st.sidebar.checkbox('Display recognized image(s)')
 
+    ###
+    ### Session state
+    ###
+    if 'count' not in st.session_state:
+        st.session_state.count = 0
+        st.session_state.last_updated = datetime.time(0, 0)
 
+        
     ###
     ### Preparation of place holoder For Aggrid 
     ###
@@ -325,6 +337,7 @@ def main():
     rcol1.text('明日の東京の天気： '+weather_data['forecasts'][1]['telop'])
     # rcol1.write('HEADLINE'+weather_data['description']['headlineText'])
     # rcol1.write(weather_data['description']['text'][:101])
+
     
     ###
     # Check point by streamlit secrets management function
@@ -333,7 +346,7 @@ def main():
 #     with cp_e.container():
 #         guess = st.text_input("What is the password?")
 #         if guess != st.secrets["password"]:
-#             st.warning("Please input the password.")
+#             st.warning("Please input the correct password.")
 #             st.stop()
 #         st.success('Thank you for inputting the password.')
 #         # time.sleep(1)
@@ -1100,10 +1113,9 @@ if __name__ == "__main__":
 
 
 
-#
+
 # df = pd.read_sql('SELECT * FROM product', con=conn)
 # st.write(df)
-# 
 # gd = GridOptionsBuilder.from_dataframe(df)
 # gd.configure_pagination(enabled=True)
 # gd.configure_default_column(editable=True, groupable=True)
@@ -1135,4 +1147,13 @@ if __name__ == "__main__":
 # 
 # cur.close()
 # conn.close()
+
+
+#  aa_e = st.empty()
+#  with aa_e.form(key='cp-e-form'):
+#      message = st.text_input("Input your message, please.")
+#      submitted = st.form_submit_button('送信')
+#      if submitted: 
+#        st.success('The message is '+message)
+
 
