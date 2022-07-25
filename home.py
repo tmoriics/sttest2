@@ -16,8 +16,9 @@
 # 2022-07-20T22:00
 # 2022-07-22T12:00 
 # 2022-07-23T12:00 
-# 2022-07-24T10:30 Trying session state still after adding aggrid and credentials.toml
-#     7/17 WIP cacheが働かない。memo機能も試したがでUploadのCacheは使わないでしばらくいく。
+# 2022-07-24T10:30 
+# 2022-07-25T13:30 Trying session state still
+#     7/17 WIP アップロードこの方法ではcacheが働かない。memo機能も試したがでUploadのCacheは使わないでいくべき。
 
 
 ###
