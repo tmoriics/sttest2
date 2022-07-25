@@ -5,11 +5,12 @@
 #
 Command to build the application. PLease remeber to change the project name and application name
 ```
-gcloud builds submit --tag gcr.io/diary-manager-alpha2/sttest2  --project=diary-manager-alpha2 
+gcloud builds submit --tag gcr.io/diary-manager-alpha2-357406/sttest2  --project=diary-manager-alpha2-357406 
 ```
 
 Command to deploy the application
 ```
-gcloud run deploy --image gcr.io/diary-manager-alpha2/sttest2 --platform managed  --project=diary-manager-alpha2 --allow-unauthenticated
+gcloud run deploy --image gcr.io/diary-manager-alpha2-357406/sttest2 --platform managed  --project=diary-manager-alpha2-357406 --allow-unauthenticated
+
 ```
 
