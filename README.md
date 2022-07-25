@@ -14,3 +14,11 @@ gcloud run deploy --image gcr.io/diary-manager-alpha2-357406/sttest2 --platform 
 
 ```
 
+
+
+# Local
+$ docker build ./ -t dmalpha2
+# $ docker run --init -d -e PORT=1323 -p 8002:1323 dmalpha2
+$ docker run -e PORT=8080 -p 8002:8080 dmalpha2
+
+
