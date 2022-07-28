@@ -17,7 +17,8 @@
 # 2022-07-22T12:00 
 # 2022-07-23T12:00 
 # 2022-07-24T10:30 
-# 2022-07-25T13:30 Trying session state still
+# 2022-07-25T13:30 
+# 2022-07-28T19:00 Trying session state still
 #     7/17 WIP アップロードこの方法ではcacheが働かない。memo機能も試したがでUploadのCacheは使わないでいくべき。
 
 
@@ -101,19 +102,20 @@ tz_jst = datetime.timezone(datetime.timedelta(hours=9))
 #####
 #####
 
+
 ###
-# Secret get ocr text from a pdf file
+# Secret get ocr json from a pdf file
 ###
 # OCRテキスト取得  PDFは一回１０枚まで対応
 # pdf_fn = 'pdf_diary_'+str(diary_id)+"_" + diary_date.strftime('%Y%m%d')
-def get_ocr_text_from_pdf_file(pdffile, diary_id, diary_date):
+def get_ocr_json_from_pdf_file(pdffile, diary_id, diary_date, diary_page):
     api_url = os.environ.get('CLOVA_API_URL')
     secret_key = os.environ.get('CLOVA_SECRET_KEY')
     request_json = {
         "images": [
             {
                 "format": "pdf",
-                "name": "pdf_diary_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')
+                "name": "pdf_diary_"+str(diary_id)+"_"+diary_date.strftime('%m%d')+'_p'+str(diary_page)
             }
         ],
         "version": "V2",
@@ -131,21 +133,38 @@ def get_ocr_text_from_pdf_file(pdffile, diary_id, diary_date):
     ]
     response = requests.request('POST', api_url, headers=headers, data = payload, files = files)
     # print(response.status_code)
+    
+    # response_json_fn = "res_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.json'
+    response_json_fn = "res_" + str(diary_id)+"_"+diary_date.strftime('%m%d')+'_p'+str(diary_page)+'.json'
+    with open(response_json_fn, 'w') as f:
+        json.dump(response.json(), f, indent=4)
+
     return response.json()
 
 
 ###
-# Secret get ocr text from a jpeg file
+# Secret get ocr json from a jpeg file
 ###
-# jpg_fn = 'jpg_diary_'+str(diary_id)+"_" + diary_date.strftime('%Y%m%d')
-def get_ocr_text_from_jpg_file(jpgfile, diary_id, diary_date):
+def get_ocr_json_from_jpg_file(jpgfile, diary_id, diary_date, diary_page):
     api_url = os.environ.get('CLOVA_API_URL')
     secret_key = os.environ.get('CLOVA_SECRET_KEY')
+    # request_json = {
+    #    "images": [
+    #        {
+    #            "format": "jpg",
+    #            "name": "jpg_diary_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')
+    #        }
+    #    ],
+    #    "version": "V2",
+    #    "requestId": str(uuid.uuid4()),
+    #    "timestamp": int(round(time.time() * 1000)),
+    #    "lang":"ja"
+    #}
     request_json = {
         "images": [
             {
                 "format": "jpg",
-                "name": "jpg_diary_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')
+                "name": "jpg_diary_"+str(diary_id)+"_"+diary_date.strftime('%m%d')+'_p'+str(diary_page)
             }
         ],
         "version": "V2",
@@ -163,10 +182,60 @@ def get_ocr_text_from_jpg_file(jpgfile, diary_id, diary_date):
     ]
     response = requests.request('POST', api_url, headers=headers, data = payload, files = files)
     # print(response.status_code)
+    
+    # response_json_fn = "res_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.json'
+    response_json_fn = "res_" + str(diary_id)+"_"+diary_date.strftime('%m%d')+'_p'+str(diary_page)+'.json'
+    with open(response_json_fn, 'w') as f:
+        json.dump(response.json(), f, indent=4)
+    
     return response.json()
 
 
 ###
+###
+# Get ocr text from a pdf file through json
+###
+def get_ocr_text_from_pdf_file(pdffile, diary_id, diary_date, diary_page):
+    res_json = get_ocr_json_from_pdf_file(pdffile, diary_id, diary_date, diary_page)
+    df_res = pd.read_json(res_json, orient='columns')
+    
+    d_values = []
+    d_polys = []
+    for i, val in enumerate(df_s['images'][0]['fields']):
+        d_values.append(val['inferText'])
+        d_polys.append(val['boundingPoly'])
+        print('.'*20)
+        print(val)
+        for j, v in enumerate(val['boundingPoly']['vertices']):
+            print('i'+str(i), 'j'+str(j), v['x'], v['y'])
+            
+    text = 'abcde'           
+    return(text)
+            
+
+
+
+###
+# Get ocr text from a jpg file through json
+###
+def get_ocr_text_from_jpg_file(jpgfile, diary_id, diary_date):
+    res_json = get_ocr_json_from_jpg_file(jpgfile, diary_id, diary_date, diary_page)
+    df_res = pd.read_json(res_json, orient='columns')
+    
+    d_values = []
+    d_polys = []
+    for i, val in enumerate(df_s['images'][0]['fields']):
+        d_values.append(val['inferText'])
+        d_polys.append(val['boundingPoly'])
+        print('.'*20)
+        print(val)
+        for j, v in enumerate(val['boundingPoly']['vertices']):
+            print('i'+str(i), 'j'+str(j), v['x'], v['y'])
+            
+    text = 'abcde'           
+    return(text)
+            
+            
 ### Convert a DataFrame to CSV with utf-8-sig
 ###
 @st.experimental_memo 
@@ -400,6 +469,24 @@ def main():
     di_e.empty()
     lcol1.info('日誌対象日は'+diary_date.strftime('%Y年%m月%d日'+'です。'))
     
+    ###
+    # Diary page input
+    ###
+    # diary_page_string = '1'
+    pi_e = lcol1.empty()
+    with pi_e.container():
+        diary_page_string = st.text_input("日誌のページを数字で入力してください。")
+        if len(diary_page_string) != 0:
+            diary_page = int(float(diary_page_string))
+            if diary_page >= 9999:
+                st.stop()
+            else:
+                st.success('入力が確認できました。'+diary_page_string)
+        else:
+            st.warning('日誌のページの入力を御願いします。')
+            st.stop()
+    pi_e.empty()
+    lcol1.info('日誌ページはp.'+diary_page_string+'です。')
     
     ###
     # Column 1 end
@@ -527,6 +614,7 @@ def main():
                 st.write("filename: ", uploaded_jpg_file.name)
                 # WIP dummy data
                 ocr_urination_data_df = pd.read_csv("data/urination_data_sample1.csv")
+                # ocr_urination_data_df = get_ocr_text_from_jpg_file(jpgfile, diary_id, diary_date)
             else:
                 st.write('このような日誌画像(JPG)をアップロードしてください。')
                 w = form1_sample1_image.width
@@ -570,7 +658,8 @@ def main():
                 cimg_array = np.array(cimg)
                 st.write(cimg_array.shape)
                 st.image(cimg, caption='日誌画像', width=256)
-                jpg_fn = 'diary_'+str(diary_id)+"_" + diary_date.strftime('%Y%m%d')+'.jpg'
+                # jpg_fn = 'diary_'+str(diary_id)+"_" + diary_date.strftime('%Y%m%d')+'.jpg'
+                jpg_fn = str(diary_id)+"_"+diary_date.strftime('%m%d')+'_p'+diary_page_string+'.jpg'
                 btn = st.download_button(label="Download the registered image",
                                          data=photo_file_buffer,
                                          file_name=jpg_fn,
@@ -621,14 +710,15 @@ def main():
     #######################################
 
     ###
-    # Hidden procedure:  Downloadable diary document csv
+    # Downloadable diary document csv
     ###
-    # ocr_urination_data_csv = convert_df_to_csv(ocr_urination_data_df)
+    ocr_urination_data_csv = convert_df_to_csv(ocr_urination_data_df)
     # ocr_urination_data_csv_fn = "ocr_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
-    # st.download_button(label="Download OCR diary document as CSV",
-    #                    data=orc_urination_data_csv,
-    #                    file_name=ocr_urination_data_csv_fn,
-    #                    mime='text/csv')
+    ocr_urination_data_csv_fn = "ocr_"+ str(diary_id)+"_"+diary_date.strftime('%m%d')+'_p'+diary_page_string+'.csv'
+    st.download_button(label="Download OCR diary document as CSV",
+                       data=ocr_urination_data_csv,
+                       file_name=ocr_urination_data_csv_fn,
+                       mime='text/csv')
 
     # df creation from ocr df by deep copy 
     urination_data_df = ocr_urination_data_df.copy()
@@ -821,7 +911,8 @@ def main():
         #
         # Downloadable recognized document CSV (=data CSV)
         ud_df1_csv = convert_df_to_csv(ud_df1)
-        ud_df1_csv_fn = "ud_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
+        # ud_df1_csv_fn = "ud_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
+        ud_df1_csv_fn = "ud_"+ str(diary_id)+"_"+diary_date.strftime('%m%d')+'_p'+diary_page_string+'.csv'
         # st.subheader("日誌データ（認識結果）のCSV形式でのダウンロード")
         st.download_button(label="Download recognized data as CSV",
                            data=ud_df1_csv,
@@ -881,7 +972,8 @@ def main():
         ud_df2 = ud_gd['data']
         # Downloadable edited document Type B 
         ud_df2_csv = convert_df_to_csv(ud_df2)
-        ud_df2_csv_fn = "gd_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
+        # ud_df2_csv_fn = "gd_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
+        ud_df2_csv_fn = "gd_"+ str(diary_id)+"_"+diary_date.strftime('%m%d')+'_p'+diary_page_string+'.csv'
         # st.subheader("日誌データ（編集後）のCSV形式でのダウンロード")
         st.download_button(label="Download edited data as CSV",
                            data=ud_df2_csv,
@@ -950,8 +1042,10 @@ def main():
     ind_e = lcol2.empty()
     with ind_e.container():
         st.header('排尿関連指標：')
-        first_sleep_time = (first_after_bed_datetime -
-                            bed_datetime).total_seconds() / 60
+        if first_after_bed_found == True:
+            first_sleep_time = (first_after_bed_datetime - bed_datetime).total_seconds() / 60
+        else:
+            first_sleep_time = 0
         number_of_urination = len(urination_data_df[(urination_data_df['time_phase'] == 'day_time') | (
             urination_data_df['time_phase'] == 'after_bed') | (urination_data_df['time_phase'] == 'first_after_next_wakeup')])
         number_of_daytime_urination = len(
@@ -964,6 +1058,12 @@ def main():
             urination_data_df['time_phase'] == 'first_after_next_wakeup')].micturition.sum()
         urination_volume = urination_data_df[(urination_data_df['time_phase'] == 'after_bed') | (
             urination_data_df['time_phase'] == 'first_after_next_wakeup') | (urination_data_df['time_phase'] == 'day_time')].micturition.sum()
+        if np.isnan(daytime_urination_volume) == True:
+            daytime_urination_volume =0.0
+        if np.isnan(nocturnal_urination_volume) == True:
+            nocturnal_urination_volume =0.0
+        if np.isnan(urination_volume) == True:
+            urination_volume =0.0
         if number_of_urination != 0:
             urination_volume_per_cycle = urination_volume / number_of_urination
         else:
@@ -974,7 +1074,8 @@ def main():
             urination_data_df['time_phase'] == 'first_after_next_wakeup') | (urination_data_df['time_phase'] == 'day_time')].micturition.max()
         minimum_single_nocturnal_urination_volume = urination_data_df[(urination_data_df['time_phase'] == 'after_bed') | (
             urination_data_df['time_phase'] == 'first_after_next_wakeup')].micturition.min()
-        maximum_single_nocturnal_urination_volume = urination_data_df[(urination_data_df['time_phase'] == 'after_bed') | (
+        maximum_single_nocturnal_urination_volume = urination_data_df[(urination_data_df['time_phase'] == 'after_bed')
+                                                                      | (
             urination_data_df['time_phase'] == 'first_after_next_wakeup')].micturition.max()
         average_urination_interval = urination_data_df.mean(
             numeric_only=True).time_difference
@@ -982,17 +1083,25 @@ def main():
             numeric_only=True).time_difference
         maximum_urination_interval = urination_data_df.max(
             numeric_only=True).time_difference
-        if urination_volume != 0:
+        if np.isnan(maximum_single_urination_volume) == True:
+            maximum_single_urination_volume =0.0
+        if np.isnan(minimum_single_urination_volume) == True:
+            minimum_single_urination_volume =0.0
+        if np.isnan(maximum_single_nocturnal_urination_volume) == True:
+            maximum_single_nocturnal_urination_volume =0.0
+        if np.isnan(minimum_single_nocturnal_urination_volume) == True:
+            minimum_single_nocturnal_urination_volume =0.0
+        if urination_volume != 0: 
             noctural_plyuria_index = float(
                 nocturnal_urination_volume * 100.0 / urination_volume)
         else:
             noctural_plyuria_index = 0.0
+        
         # WIP
         # maximum_voided_volumeに漏れや導尿をいれてない
         maximum_voided_volume = maximum_single_urination_volume
         if maximum_voided_volume != 0:
-            nocturia_index = math.ceil(
-                float(nocturnal_urination_volume / maximum_voided_volume))
+            nocturia_index = math.ceil(float(nocturnal_urination_volume / maximum_voided_volume))
         else:
             nocturia_index = int(1)
         pnv = nocturia_index - 1
@@ -1030,7 +1139,8 @@ def main():
         indices_df = pd.DataFrame(columns=['指標', '値', '単位'],
                                   data=[
                                       ['日誌対象者ID', int(diary_id), ''],
-                                      ['日付', int(diary_date_int), ''],
+                                      ['日誌初回日付', int(diary_date_int), ''],
+                                      ['日誌ページ', int(diary_page), ''],
                                       ['初回睡眠時間(HUS)', int(first_sleep_time), '分'],
                                       ['最大尿量(MVV)', int(
                                           maximum_voided_volume), 'ml'],
@@ -1082,13 +1192,32 @@ def main():
         #
         # Downloadable indices CSV
         indices_csv = convert_df_to_csv(indices_df)
-        indices_csv_fn = "indices_" + \
-            str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
+        # indices_csv_fn = "indices_" +  str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
+        indices_csv_fn = "indices_"+ str(diary_id)+"_"+diary_date.strftime('%m%d')+'_p'+diary_page_string+'.csv'
         st.subheader("排尿関連指標のCSV形式でのダウンロード")
         st.download_button(label="Download indices as CSV",
                            data=indices_csv,
                            file_name=indices_csv_fn,
                            mime='text/csv')
+        
+        #
+        # Downloadable composite XLSX
+        ########## WIP
+        ########## creating multi sheet by BytesIO is not working 20220728T1937
+#        ud_df1.insert(0, 'date_time', ud_df1['datetime'].apply(lambda d: pd.Timestamp(d).isoformat()))
+#        ud_df1_for_composite = ud_df1.drop(columns='datetime')
+#        composite_xlsx_fn = "composite_"+ str(diary_id)+"_"+diary_date.strftime('%m%d')+'_p'+diary_page_string+'.xlsx'
+#        composite_xlsx_output = io.BytesIO()
+#        with pd.ExcelWriter(composite_xlsx_output) as composite_writer:
+#            ud_df1_for_composite.to_excel(composite_writer, sheet_name = ud_df1_csv_fn)
+#            indices_df.to_excel(composite_writer, sheet_name = indices_csv_fn)
+#            ocr_urination_data_df.to_excel(composite_writer, sheet_name = ocr_urination_data_csv_fn)
+#            # composite_writer.save()
+#            composite_xlsx_processed_data = composite_xlsx_output.getvalue()
+#        st.subheader("複合したXLSX形式でのダウンロード")
+#        st.download_button(label="Download composite as XLSX",
+#                           data=composite_xlsx_processed_data,
+#                           file_name=composite_xlsx_fn)
         
     ###
     # Column 2 end
