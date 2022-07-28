@@ -1,24 +1,2 @@
-# diary manager alpha 2
-
-#
-# Build and deploy
-#
-Command to build the application. PLease remeber to change the project name and application name
-```
-gcloud builds submit --tag gcr.io/diary-manager-alpha2-357406/sttest2  --project=diary-manager-alpha2-357406 
-```
-
-Command to deploy the application
-```
-gcloud run deploy --image gcr.io/diary-manager-alpha2-357406/sttest2 --platform managed  --project=diary-manager-alpha2-357406 --allow-unauthenticated
-
-```
-
-
-
-# Local
-$ docker build ./ -t dmalpha2
-# $ docker run --init -d -e PORT=1323 -p 8002:1323 dmalpha2
-$ docker run -e PORT=8080 -p 8002:8080 dmalpha2
-
+# diary manager alpha2
 
