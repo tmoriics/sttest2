@@ -478,7 +478,7 @@ def main():
     # diary_page_string = '1'
     pi_e = lcol1.empty()
     with pi_e.container():
-        diary_page_string = st.text_input("日誌のページを数字で入力してください。")
+        diary_page_string = st.text_input("日誌の何ページ目か，数字で入力してください。")
         if len(diary_page_string) != 0:
             diary_page = int(float(diary_page_string))
             if diary_page >= 9999:
@@ -873,8 +873,8 @@ def main():
         ##
         # OCR image(s) display
         ##
-        st.subheader("画像（読み取り結果）")
         if display_recognized_image:
+            st.subheader("画像（読み取り結果）")
             if ri == '画像ファイル(JPG)':
                 resimg = Image.open(
                     'images/diary_form1_sample1_virtually_recognized.png')
@@ -1154,12 +1154,14 @@ def main():
         ###
         #
         # Downloadable indices preparation
+        diary_first_date_int = int(diary_first_date.strftime('%Y%m%d'))
         diary_date_int = int(diary_date.strftime('%Y%m%d'))
         indices_df = pd.DataFrame(columns=['指標', '値', '単位'],
                                   data=[
                                       ['日誌対象者ID', int(diary_id), ''],
-                                      ['日誌初回日付', int(diary_date_int), ''],
+                                      ['日誌初回日付', int(diary_first_date_int), ''],
                                       ['日誌ページ', int(diary_page), ''],
+                                      ['日誌日付', int(diary_date_int), ''],
                                       ['初回睡眠時間(HUS)', int(first_sleep_time), '分'],
                                       ['最大尿量(MVV)', int(
                                           maximum_voided_volume), 'ml'],
