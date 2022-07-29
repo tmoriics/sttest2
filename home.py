@@ -18,7 +18,8 @@
 # 2022-07-23T12:00 
 # 2022-07-24T10:30 
 # 2022-07-25T13:30 
-# 2022-07-28T19:00 Trying session state still
+# 2022-07-28T19:00 
+# 2022-07-29T22:30 Trying session state still
 #     7/17 WIP アップロードこの方法ではcacheが働かない。memo機能も試したがでUploadのCacheは使わないでいくべき。
 #
 
@@ -195,7 +196,7 @@ def get_ocr_json_from_jpg_file(jpgfile, diary_id, diary_date, diary_page):
 ###
 # Get ocr text from a pdf file through json
 ###
-def get_ocr_text_from_pdf_file(pdffile, diary_id, diary_date, diary_page):
+def get_ocr_dataframe_from_pdf_file(pdffile, diary_id, diary_date, diary_page):
     res_json = get_ocr_json_from_pdf_file(pdffile, diary_id, diary_date, diary_page)
     df_res = pd.read_json(res_json, orient='columns')
     
@@ -209,8 +210,8 @@ def get_ocr_text_from_pdf_file(pdffile, diary_id, diary_date, diary_page):
         for j, v in enumerate(val['boundingPoly']['vertices']):
             print('i'+str(i), 'j'+str(j), v['x'], v['y'])
             
-    text = 'abcde'           
-    return(text)
+    ret_df = 'abcde'           
+    return(ret_df)
             
 
 
@@ -218,7 +219,7 @@ def get_ocr_text_from_pdf_file(pdffile, diary_id, diary_date, diary_page):
 ###
 # Get ocr text from a jpg file through json
 ###
-def get_ocr_text_from_jpg_file(jpgfile, diary_id, diary_date):
+def get_ocr_dataframe_from_jpg_file(jpgfile, diary_id, diary_date, diary_page):
     res_json = get_ocr_json_from_jpg_file(jpgfile, diary_id, diary_date, diary_page)
     df_res = pd.read_json(res_json, orient='columns')
     
@@ -232,8 +233,8 @@ def get_ocr_text_from_jpg_file(jpgfile, diary_id, diary_date):
         for j, v in enumerate(val['boundingPoly']['vertices']):
             print('i'+str(i), 'j'+str(j), v['x'], v['y'])
             
-    text = 'abcde'           
-    return(text)
+    ret_df = 'abcde'           
+    return(ret_df)
             
             
 ### Convert a DataFrame to CSV with utf-8-sig
@@ -262,23 +263,25 @@ def upload_pdf_file_func():
     uploaded_pdffile = st.file_uploader("日誌の画像PDFファイルを選んでください。",
                                         accept_multiple_files=False)
     return uploaded_pdffile
+
+
 ###
 # Show PDF
 ###
-# def show_pdf(file_path:str):
-#     """Show the PDF in Streamlit
-#     That returns as html component
-#
-#     Parameters
-#     ----------
-#     file_path : [str]
-#         Uploaded PDF file path
-#     """
-#
-#     with open(file_path, "rb") as f:
-#         base64_pdf = base64.b64encode(f.read()).decode("utf-8")
-#     pdf_display = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height="1000" type="application/pdf">'
-#     st.markdown(pdf_display, unsafe_allow_html=True)
+def show_pdf(file_path:str):
+    """Show the PDF in Streamlit
+    That returns as html component
+
+    Parameters
+    ----------
+    file_path : [str]
+        Uploaded PDF file path
+    """
+
+    with open(file_path, "rb") as f:
+        base64_pdf = base64.b64encode(f.read()).decode("utf-8")
+    pdf_display = f'<iframe width="50%" height="350" type="application/pdf" src="data:application/pdf;base64,{base64_pdf}" /iframe>'
+    st.markdown(pdf_display, unsafe_allow_html=True)
 
 
 ###
@@ -357,7 +360,7 @@ def main():
       """
     st.markdown(hide_menu_style, unsafe_allow_html=True)
     st.title('排尿日誌マネージャー（産褥期）')
-    st.text('Copyright (c) 2022 tmoriics (2022-07-22T16:00)')
+    st.text('Copyright (c) 2022 tmoriics (2022-07-29T22:30)')
 
     ###
     # Load heavy things
@@ -540,10 +543,8 @@ def main():
     st.header("日誌画像アップロード")
     ei = st.empty()
     with ei.container():
-        # ri = st.radio("日誌画像をアップロードしてください。スマホカメラでいま撮影しても構いません。",
-        #              ('画像ファイル(PDF)', '画像ファイル(JPG)', 'カメラ撮影', 'ファイル(XLSX)'),
-        ri = st.radio("日誌データをアップロードしてください。スマホカメラでいま撮影しても構いません。",
-                      ('画像ファイル(JPG)', 'カメラ撮影', 'ファイル(XLSX)'),
+        ri = st.radio("日誌画像をアップロードしてください。スマホカメラでいま撮影しても構いません。",
+                     ('画像ファイル(JPG)', '画像ファイル(PDF)', 'カメラ撮影', 'ファイル(XLSX)'),
                       horizontal=True)
         if ri == 'ファイル(XLSX)':
             uploaded_xlsx_file = upload_xlsx_file_func()
@@ -554,51 +555,53 @@ def main():
                 st.write('このような日誌データ（XLSX形式。排尿回数13回以下）をアップロードしてください。')
                 st.image(form1_sample1_xlsx_image, caption='日誌例', width=480)
                 st.stop()
-        # WIP
-        # PDF未対応 pdf2imageがLinuxで使えない。
-        # elif ri == '画像ファイル(PDF)':
-        #    uploaded_pdf_file = upload_pdf_file_func()
-        #    if uploaded_pdf_file is not None:
-        #        st.success('日誌画像が登録されました。')
-        #        # WIP
-        #        # Poppler問題を解決しないといけない。
-        #        # さらにPDFから画像複数ページへの変換かハンドリング工夫をしないといけない。
-        #        with tempfile.NamedTemporaryFile(delete=False) as pdf_tmp_file:
-        #          fp = Path(pdf_tmp_file.name)
-        #          fp.write_bytes(uploaded_pdf_file.getvalue())
-        #          pimgs = convert_from_path(pdf_tmp_file.name)
-        #          st.image(pimgs, caption='Uploaded image(s)')
-        #        # with しないならCLOSE()すべきだがwithしてるので不要。
-        #    else: 
-        #     st.write('このような日誌画像をアップロードしてください。')
-        #     st.image(form1_sample1_image, caption='日誌画像例', width=120)
-        #     st.stop()
-        # WIP
-        # JPGが複数ページのときに対応しないとならない
+        elif ri == '画像ファイル(PDF)':
+            uploaded_pdf_file = upload_pdf_file_func()
+            if uploaded_pdf_file is not None:
+                # uploaded_pdf_file is a file-like.
+                st.success('日誌画像が登録されました。')
+                # WIP
+                # PDF対応難しい pdf2imageがLinuxで使えない。
+                # Poppler問題を解決しないといけない。
+                # さらにPDFから画像複数ページへの変換かハンドリング工夫をしないといけない。
+                with tempfile.NamedTemporaryFile(delete=False) as pdf_tmp_file:
+                    fp = Path(pdf_tmp_file.name)
+                    fp.write_bytes(uploaded_pdf_file.getvalue())
+                # pimgs = convert_from_path(pdf_tmp_file.name)
+                # st.image(pimgs, caption='Uploaded image(s)')
+                st.write(show_pdf(pdf_tmp_file.name))
+                ### with しないならCLOSE()すべきだがwithしてるので不要。
+                st.write("filename: ", uploaded_pdf_file.name)
+                # WIP dummy data
+                ocr_urination_data_df = pd.read_csv("data/urination_data_sample1.csv")
+                # ocr_urination_data_df = get_ocr_dataframe_from_pdf_file(pdf_tmp_file.name, diary_id, diary_date, diary_page)
+            else: 
+                st.write('このような日誌画像をアップロードしてください。')
+                st.image(form1_sample1_image, caption='日誌画像例', width=120)
+                st.stop()
         # elif ri == '画像ファイル(JPG)':
-        #     uploaded_jpg_files = upload_jpg_files_func()
-        #     if uploaded_jpg_files:
-        #         st.success('日誌画像が登録されました。')
-        #         dimgs = []
-        #         for i, uploaded_jpg_file in enumerate(uploaded_jpg_files):
-        #             # 複数枚きたときの扱いはここから改変。下のdimgに一枚ずつ入っている。
-        #             #    bytes_data = uploaded_jpg_file.read()
-        #             bytes_data = uploaded_jpg_file.getvalue()
-        #             dimgs.append(Image.open(io.BytesIO(bytes_data)))
-        #             st.image(dimgs[i], caption='Uploaded jpeg image '+str(i),
-        #                      use_column_width=True)
-        #             st.write("filename: ", uploaded_jpg_file.name)
-        #             # WIP dummy data
-        #             ocr_urination_data_df = pd.read_csv(
-        #                 "data/urination_data_sample1.csv")
+            # WIP
+            # JPGが複数ページのときに対応しないとならない
+            # uploaded_jpg_files = upload_jpg_files_func()
+            #     if uploaded_jpg_files:
+            #         st.success('日誌画像が登録されました。')
+            #         dimgs = []
+            #         for i, uploaded_jpg_file in enumerate(uploaded_jpg_files):
+            #             # 複数枚きたときの扱いはここから改変。下のdimgに一枚ずつ入っている。
+            #             #    bytes_data = uploaded_jpg_file.read()
+            #             bytes_data = uploaded_jpg_file.getvalue()
+            #             dimgs.append(Image.open(io.BytesIO(bytes_data)))
+            #             st.image(dimgs[i], caption='Uploaded jpeg image '+str(i),
+            #                      use_column_width=True)
+            #             st.write("filename: ", uploaded_jpg_file.name)
+            #             # WIP dummy data
+            #             ocr_urination_data_df = pd.read_csv(
+            #                 "data/urination_data_sample1.csv")
         elif ri == '画像ファイル(JPG)':
             uploaded_jpg_file = upload_jpg_file_func()
             if uploaded_jpg_file is not None:
-                ##########
                 # uploaded_jpg_file is a file-like.
                 st.success('日誌画像が登録されました。')
-                ##########
-                # WIP start erase or not?
                 with tempfile.NamedTemporaryFile(delete=False) as jpg_tmp_file:
                     fp = Path(jpg_tmp_file.name)
                     fp.write_bytes(uploaded_jpg_file.getvalue())
@@ -606,15 +609,14 @@ def main():
                     # st.image(jimg, caption='Uploaded jpg image',use_column_width=False)
                     # for check
                     # print(jpg_tmp_file.name)
-                # WIP end erase or not
-                ##########
                 bytes_data = uploaded_jpg_file.getvalue()  
                 dimg = Image.open(io.BytesIO(bytes_data))
                 st.image(dimg, caption='Uploaded jpeg image ', use_column_width=True)
+                ### with しないならCLOSE()すべきだがwithしてるので不要。
                 st.write("filename: ", uploaded_jpg_file.name)
                 # WIP dummy data
                 ocr_urination_data_df = pd.read_csv("data/urination_data_sample1.csv")
-                # ocr_urination_data_df = get_ocr_text_from_jpg_file(jpgfile, diary_id, diary_date)
+                # ocr_urination_data_df = get_ocr_dataframe_from_jpg_file(jpg_tmp_file.name, diary_id, diary_date)
             else:
                 st.write('このような日誌画像(JPG)をアップロードしてください。')
                 w = form1_sample1_image.width
@@ -666,6 +668,7 @@ def main():
                                          mime="image/jpg")
                 # WIP dummy data
                 ocr_urination_data_df = pd.read_csv("data/urination_data_sample1.csv")
+                # ocr_urination_data_df = get_ocr_dataframe_from_jpg_file(photo_tmp_file.name, diary_id, diary_date)
             else:
                 st.write('このような日誌画像を縦長で撮影してください。')
                 st.image(form1_sample1_image, caption='日誌画像例', width=256)
@@ -710,16 +713,8 @@ def main():
     #######################################
 
     ###
-    # Downloadable diary document csv
     ###
-    ocr_urination_data_csv = convert_df_to_csv(ocr_urination_data_df)
-    # ocr_urination_data_csv_fn = "ocr_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
-    ocr_urination_data_csv_fn = "ocr_"+ str(diary_id)+"_"+diary_date.strftime('%m%d')+'_p'+diary_page_string+'.csv'
-    st.download_button(label="Download OCR diary document as CSV",
-                       data=ocr_urination_data_csv,
-                       file_name=ocr_urination_data_csv_fn,
-                       mime='text/csv')
-
+    ###
     # df creation from ocr df by deep copy 
     urination_data_df = ocr_urination_data_df.copy()
     # for check
@@ -874,9 +869,11 @@ def main():
         #
         # Recognized diary document display
         st.header("日誌データ（認識結果）")
-        st.subheader("テーブル（認識結果）")
-        #
-        # Recognized image(s) display
+
+        ##
+        # OCR image(s) display
+        ##
+        st.subheader("画像（読み取り結果）")
         if display_recognized_image:
             if ri == '画像ファイル(JPG)':
                 resimg = Image.open(
@@ -892,6 +889,28 @@ def main():
                 st.image(resimg, caption='認識された日誌画像', width=256)
             else:
                 st.warning('画像ではなく表ファイルがアップロードされています（画像認識は無し）。')
+                
+        ##
+        # OCR diary doument csv
+        ###
+        st.subheader("テーブル（読み取り結果）")
+        #
+        # OCR diary document csv by st.table
+        st.table(ocr_urination_data_df)
+        #
+        # Downloadable OCR diary document csv by st.table
+        ocr_urination_data_csv = convert_df_to_csv(ocr_urination_data_df)
+        # ocr_urination_data_csv_fn = "ocr_"+str(diary_id)+"_"+diary_date.strftime('%Y%m%d')+'.csv'
+        ocr_urination_data_csv_fn = "ocr_"+ str(diary_id)+"_"+diary_date.strftime('%m%d')+'_p'+diary_page_string+'.csv'
+        st.download_button(label="Download OCR diary document as CSV",
+                           data=ocr_urination_data_csv,
+                           file_name=ocr_urination_data_csv_fn,
+                           mime='text/csv')
+
+        ###
+        # Recognized image(s) display
+        ###
+        st.subheader("テーブル（認識結果）")
 
         ###
         # Downloadable recognized document (=data) Type A
