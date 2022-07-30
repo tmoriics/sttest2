@@ -1152,6 +1152,11 @@ def main():
         ###
         # Downloadable indices 
         ###
+        ###############################
+        # WIP
+        # first date handling should be re-designed for web
+        diary_first_date = diary_date
+        #
         #
         # Downloadable indices preparation
         diary_first_date_int = int(diary_first_date.strftime('%Y%m%d'))
